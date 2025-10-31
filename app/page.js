@@ -3,16 +3,29 @@
 import { useState, useEffect } from 'react';
 import styles from './page.module.css';
 
+const APP_VERSION = '1.0.0';
+
 export default function Home() {
   const [items, setItems] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState(''); // 'success' or 'error'
 
   useEffect(() => {
     fetchItems();
   }, []);
+
+  const showMessage = (msg, type) => {
+    setMessage(msg);
+    setMessageType(type);
+    setTimeout(() => {
+      setMessage('');
+      setMessageType('');
+    }, 3000);
+  };
 
   const fetchItems = async () => {
     try {
@@ -20,9 +33,13 @@ export default function Home() {
       const data = await res.json();
       if (data.success) {
         setItems(data.data);
+      } else {
+        console.error('API error:', data.error);
+        showMessage('Failed to fetch items', 'error');
       }
     } catch (error) {
       console.error('Error fetching items:', error);
+      showMessage('Error fetching items: ' + error.message, 'error');
     }
   };
 
@@ -41,6 +58,9 @@ export default function Home() {
         if (data.success) {
           setItems(items.map((item) => (item._id === editingId ? data.data : item)));
           setEditingId(null);
+          showMessage('Item updated successfully!', 'success');
+        } else {
+          showMessage('Error updating item: ' + (data.error || 'Unknown error'), 'error');
         }
       } else {
         const res = await fetch('/api/items', {
@@ -51,12 +71,16 @@ export default function Home() {
         const data = await res.json();
         if (data.success) {
           setItems([data.data, ...items]);
+          showMessage('Item added successfully!', 'success');
+        } else {
+          showMessage('Error adding item: ' + (data.error || 'Unknown error'), 'error');
         }
       }
       setTitle('');
       setDescription('');
     } catch (error) {
       console.error('Error submitting form:', error);
+      showMessage('Error: ' + error.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -70,9 +94,13 @@ export default function Home() {
       const data = await res.json();
       if (data.success) {
         setItems(items.filter((item) => item._id !== id));
+        showMessage('Item deleted successfully!', 'success');
+      } else {
+        showMessage('Error deleting item: ' + (data.error || 'Unknown error'), 'error');
       }
     } catch (error) {
       console.error('Error deleting item:', error);
+      showMessage('Error: ' + error.message, 'error');
     }
   };
 
@@ -98,17 +126,25 @@ export default function Home() {
       const data = await res.json();
       if (data.success) {
         setItems(items.map((i) => (i._id === item._id ? data.data : i)));
+      } else {
+        showMessage('Error updating item: ' + (data.error || 'Unknown error'), 'error');
       }
     } catch (error) {
       console.error('Error updating item:', error);
+      showMessage('Error: ' + error.message, 'error');
     }
   };
 
   return (
     <main className={styles.main}>
+      {message && (
+        <div className={`${styles.notification} ${styles[messageType]}`}>
+          {message}
+        </div>
+      )}
       <div className={styles.container}>
-        <h1>MongoDB CRUD App</h1>
-        <p>A simple Todo app connected to MongoDB</p>
+        <h1>Lunch App</h1>
+        <p>Organize your lunch preferences and dietary needs</p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <input
@@ -187,6 +223,7 @@ export default function Home() {
             ))
           )}
         </div>
+        <div className={styles.version}>v{APP_VERSION}</div>
       </div>
     </main>
   );
