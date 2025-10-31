@@ -2,6 +2,5 @@
   "buildCommand": "next build",
   "devCommand": "next dev",
   "installCommand": "npm install",
-  "env": {},
-  "envPrefix": "NEXT_PUBLIC_"
+  "env": {}
 }
