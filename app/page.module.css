@@ -62,6 +62,52 @@
   margin: 0;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #333;
+  width: 100%;
+}
+
+.header > div:first-child h1 {
+  margin: 0;
+}
+
+.header > div:first-child p {
+  margin: 0.5rem 0 0 0;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 1rem;
+}
+
+.logoutBtn {
+  padding: 0.6rem 1.2rem;
+  background: linear-gradient(to right, #ff6464, #ff4757);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.logoutBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 100, 100, 0.4);
+}
+
+.logoutBtn:active {
+  transform: translateY(0);
+}
+
 .healthBtn {
   align-self: flex-start;
   padding: 0.5rem 1rem;

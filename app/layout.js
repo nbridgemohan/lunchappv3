@@ -1,14 +1,17 @@
-import './globals.css'
+import { AuthProvider } from '@/lib/AuthContext';
+import './globals.css';
 
 export const metadata = {
-  title: 'Simple Vercel App',
-  description: 'A simple Next.js app deployed to Vercel',
-}
+  title: 'Lunch App',
+  description: 'Organize your lunch preferences and dietary needs',
+};
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
-  )
+  );
 }

@@ -1,15 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 
 const APP_VERSION = '1.0.0';
 
 export default function Home() {
+  const { user, token, loading, logout } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
   const [items, setItems] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [itemLoading, setItemLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
@@ -67,13 +77,16 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setItemLoading(true);
 
     try {
       if (editingId) {
         const res = await fetch(`/api/items/${editingId}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
           body: JSON.stringify({ title, description }),
         });
 
@@ -95,7 +108,10 @@ export default function Home() {
       } else {
         const res = await fetch('/api/items', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
           body: JSON.stringify({ title, description }),
         });
 
@@ -120,7 +136,7 @@ export default function Home() {
       console.error('Error submitting form:', error);
       showMessage('Error: ' + error.message, 'error');
     } finally {
-      setLoading(false);
+      setItemLoading(false);
     }
   };
 
@@ -128,7 +144,12 @@ export default function Home() {
     if (!confirm('Are you sure?')) return;
 
     try {
-      const res = await fetch(`/api/items/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/items/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) {
         const text = await res.text();
@@ -166,7 +187,10 @@ export default function Home() {
     try {
       const res = await fetch(`/api/items/${item._id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ ...item, completed: !item.completed }),
       });
 
@@ -197,8 +221,26 @@ export default function Home() {
         </div>
       )}
       <div className={styles.container}>
-        <h1>Lunch App</h1>
-        <p>Organize your lunch preferences and dietary needs</p>
+        <div className={styles.header}>
+          <div>
+            <h1>Lunch App</h1>
+            <p>Organize your lunch preferences and dietary needs</p>
+          </div>
+          {user && (
+            <div className={styles.userInfo}>
+              <span>Welcome, {user.username}!</span>
+              <button
+                onClick={() => {
+                  logout();
+                  router.push('/login');
+                }}
+                className={styles.logoutBtn}
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
 
         <button onClick={checkHealth} className={styles.healthBtn}>
           Check DB Connection
@@ -223,10 +265,10 @@ export default function Home() {
           <div className={styles.buttonGroup}>
             <button
               type="submit"
-              disabled={loading}
+              disabled={itemLoading}
               className={styles.submitBtn}
             >
-              {loading ? 'Saving...' : editingId ? 'Update' : 'Add Item'}
+              {itemLoading ? 'Saving...' : editingId ? 'Update' : 'Add Item'}
             </button>
             {editingId && (
               <button
