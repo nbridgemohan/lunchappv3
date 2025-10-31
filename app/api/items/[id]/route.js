@@ -1,9 +1,14 @@
 import dbConnect from '@/lib/mongodb';
 import Item from '@/models/Item';
-import { ObjectId } from 'mongodb';
+import { authenticateRequest } from '@/lib/auth';
 
 export async function GET(request, { params }) {
   try {
+    const auth = await authenticateRequest(request);
+    if (!auth.authenticated) {
+      return auth.response;
+    }
+
     await dbConnect();
     const { id } = params;
     const item = await Item.findById(id);
@@ -27,6 +32,11 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
+    const auth = await authenticateRequest(request);
+    if (!auth.authenticated) {
+      return auth.response;
+    }
+
     await dbConnect();
     const { id } = params;
     const body = await request.json();
@@ -57,6 +67,11 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
+    const auth = await authenticateRequest(request);
+    if (!auth.authenticated) {
+      return auth.response;
+    }
+
     await dbConnect();
     const { id } = params;
     console.log(`Deleting item ${id}`);

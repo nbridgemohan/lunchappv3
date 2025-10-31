@@ -1,10 +1,16 @@
 import dbConnect from '@/lib/mongodb';
 import Item from '@/models/Item';
+import { authenticateRequest } from '@/lib/auth';
 
 export async function GET(request) {
   try {
+    const auth = await authenticateRequest(request);
+    if (!auth.authenticated) {
+      return auth.response;
+    }
+
     await dbConnect();
-    const items = await Item.find({}).sort({ createdAt: -1 });
+    const items = await Item.find({ userId: auth.user.userId }).sort({ createdAt: -1 });
     return Response.json({ success: true, data: items });
   } catch (error) {
     console.error('GET /api/items error:', error);
@@ -17,6 +23,11 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    const auth = await authenticateRequest(request);
+    if (!auth.authenticated) {
+      return auth.response;
+    }
+
     await dbConnect();
     const body = await request.json();
     console.log('Creating item with data:', body);
@@ -28,7 +39,10 @@ export async function POST(request) {
       );
     }
 
-    const item = await Item.create(body);
+    const item = await Item.create({
+      ...body,
+      userId: auth.user.userId,
+    });
     console.log('Item created successfully:', item);
     return Response.json({ success: true, data: item }, { status: 201 });
   } catch (error) {
