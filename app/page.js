@@ -30,12 +30,20 @@ export default function Home() {
   const fetchItems = async () => {
     try {
       const res = await fetch('/api/items');
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('API error response:', text);
+        showMessage(`Failed to fetch items: HTTP ${res.status}`, 'error');
+        return;
+      }
+
       const data = await res.json();
       if (data.success) {
         setItems(data.data);
       } else {
         console.error('API error:', data.error);
-        showMessage('Failed to fetch items', 'error');
+        showMessage('Failed to fetch items: ' + (data.error || 'Unknown error'), 'error');
       }
     } catch (error) {
       console.error('Error fetching items:', error);
@@ -54,6 +62,14 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title, description }),
         });
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('API error response:', text);
+          showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
+          return;
+        }
+
         const data = await res.json();
         if (data.success) {
           setItems(items.map((item) => (item._id === editingId ? data.data : item)));
@@ -68,6 +84,14 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ title, description }),
         });
+
+        if (!res.ok) {
+          const text = await res.text();
+          console.error('API error response:', text);
+          showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
+          return;
+        }
+
         const data = await res.json();
         if (data.success) {
           setItems([data.data, ...items]);
@@ -91,6 +115,14 @@ export default function Home() {
 
     try {
       const res = await fetch(`/api/items/${id}`, { method: 'DELETE' });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('API error response:', text);
+        showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
+        return;
+      }
+
       const data = await res.json();
       if (data.success) {
         setItems(items.filter((item) => item._id !== id));
@@ -123,6 +155,14 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...item, completed: !item.completed }),
       });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('API error response:', text);
+        showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
+        return;
+      }
+
       const data = await res.json();
       if (data.success) {
         setItems(items.map((i) => (i._id === item._id ? data.data : i)));
