@@ -11,11 +11,6 @@ export default function Home() {
   const { user, token, loading, logout } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
   const [items, setItems] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -25,8 +20,16 @@ export default function Home() {
   const [messageType, setMessageType] = useState(''); // 'success' or 'error'
 
   useEffect(() => {
-    fetchItems();
-  }, []);
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  useEffect(() => {
+    if (!loading && token) {
+      fetchItems();
+    }
+  }, [token, loading]);
 
   const showMessage = (msg, type) => {
     setMessage(msg);
@@ -53,7 +56,11 @@ export default function Home() {
 
   const fetchItems = async () => {
     try {
-      const res = await fetch('/api/items');
+      const res = await fetch('/api/items', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) {
         const text = await res.text();
