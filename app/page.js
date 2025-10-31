@@ -27,6 +27,20 @@ export default function Home() {
     }, 3000);
   };
 
+  const checkHealth = async () => {
+    try {
+      const res = await fetch('/api/health');
+      const data = await res.json();
+      if (data.success) {
+        showMessage('MongoDB connection OK!', 'success');
+      } else {
+        showMessage('MongoDB error: ' + (data.error || 'Unknown'), 'error');
+      }
+    } catch (error) {
+      showMessage('Health check failed: ' + error.message, 'error');
+    }
+  };
+
   const fetchItems = async () => {
     try {
       const res = await fetch('/api/items');
@@ -185,6 +199,10 @@ export default function Home() {
       <div className={styles.container}>
         <h1>Lunch App</h1>
         <p>Organize your lunch preferences and dietary needs</p>
+
+        <button onClick={checkHealth} className={styles.healthBtn}>
+          Check DB Connection
+        </button>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <input
