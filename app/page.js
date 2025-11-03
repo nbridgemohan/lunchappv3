@@ -168,17 +168,18 @@ export default function Home() {
                     onClick={handleShareUrl}
                     style={{
                       padding: '0.6rem 1.2rem',
-                      background: 'rgba(100, 200, 255, 0.2)',
-                      color: '#64c8ff',
-                      border: '1px solid #64c8ff',
+                      background: 'linear-gradient(to right, #ff6b6b, #ffd93d)',
+                      color: '#000',
+                      border: 'none',
                       borderRadius: '8px',
                       textDecoration: 'none',
                       fontSize: '0.95rem',
+                      fontWeight: '600',
                       transition: 'all 0.3s ease',
                       cursor: 'pointer',
                     }}
                   >
-                    {copied ? '✓ Copied!' : '📋 Share'}
+                    {copied ? '✓ Copied!' : '📋 Copy Link'}
                   </button>
                 )}
               </div>
