@@ -21,15 +21,15 @@ export async function POST(request, { params }) {
     }
 
     // Check if user already voted
-    const hasVoted = location.voters.includes(user._id);
+    const hasVoted = location.voters.includes(user.userId);
 
     if (hasVoted) {
       // Remove vote
-      location.voters = location.voters.filter((voterId) => voterId.toString() !== user._id.toString());
+      location.voters = location.voters.filter((voterId) => voterId.toString() !== user.userId.toString());
       location.votes -= 1;
     } else {
       // Add vote
-      location.voters.push(user._id);
+      location.voters.push(user.userId);
       location.votes += 1;
     }
 

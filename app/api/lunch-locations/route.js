@@ -46,7 +46,7 @@ export async function POST(request) {
     const location = await LunchLocation.create({
       name,
       description,
-      createdBy: user._id,
+      createdBy: user.userId,
     });
 
     await location.populate('createdBy', 'username email');

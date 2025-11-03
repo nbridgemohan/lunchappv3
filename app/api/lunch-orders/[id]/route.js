@@ -51,7 +51,7 @@ export async function PUT(request, { params }) {
     }
 
     // Only order creator can edit
-    if (order.userId.toString() !== user._id.toString()) {
+    if (order.userId.toString() !== user.userId.toString()) {
       return Response.json(
         { success: false, error: 'Not authorized to update this order' },
         { status: 403 }
@@ -110,7 +110,7 @@ export async function DELETE(request, { params }) {
     }
 
     // Only order creator can delete
-    if (order.userId.toString() !== user._id.toString()) {
+    if (order.userId.toString() !== user.userId.toString()) {
       return Response.json(
         { success: false, error: 'Not authorized to delete this order' },
         { status: 403 }

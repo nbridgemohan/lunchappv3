@@ -54,7 +54,7 @@ export async function PUT(request, { params }) {
     const { name, description } = data;
 
     // Only creator can edit
-    if (location.createdBy.toString() !== user._id.toString()) {
+    if (location.createdBy.toString() !== user.userId.toString()) {
       return Response.json(
         { success: false, error: 'Not authorized to update this location' },
         { status: 403 }
@@ -102,7 +102,7 @@ export async function DELETE(request, { params }) {
     }
 
     // Only creator can delete
-    if (location.createdBy.toString() !== user._id.toString()) {
+    if (location.createdBy.toString() !== user.userId.toString()) {
       return Response.json(
         { success: false, error: 'Not authorized to delete this location' },
         { status: 403 }

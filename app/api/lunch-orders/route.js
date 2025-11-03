@@ -62,7 +62,7 @@ export async function POST(request) {
 
     const order = await LunchOrder.create({
       locationId,
-      userId: user._id,
+      userId: user.userId,
       item,
       cost,
       notes,
