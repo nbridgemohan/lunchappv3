@@ -314,12 +314,6 @@ export default function LunchPage() {
                         >
                           {hasVoted ? '✓ Voted' : 'Vote'}
                         </button>
-                        <Link
-                          href={`/lunch/${location._id}/summary`}
-                          className={styles.ordersBtn}
-                        >
-                          Orders
-                        </Link>
                       </div>
                     </div>
                   );

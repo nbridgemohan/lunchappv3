@@ -21,6 +21,8 @@ export default function OrdersPage({ params }) {
   const [messageType, setMessageType] = useState('');
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [showVoteSummary, setShowVoteSummary] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -240,6 +242,13 @@ export default function OrdersPage({ params }) {
     }
   };
 
+  const handleShareUrl = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (loading) {
     return <div className={styles.loading}>Loading...</div>;
   }
@@ -259,24 +268,82 @@ export default function OrdersPage({ params }) {
             <h1>{location?.name || 'Loading...'}</h1>
             <p>Register what you want to order</p>
           </div>
-          <Link href="/lunch" className={styles.backBtn}>
-            Back to Voting
-          </Link>
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button
+              onClick={handleShareUrl}
+              style={{
+                padding: '0.6rem 1.2rem',
+                background: 'rgba(100, 200, 255, 0.2)',
+                color: '#64c8ff',
+                border: '1px solid #64c8ff',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontSize: '0.95rem',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+              }}
+            >
+              {copied ? '✓ Copied!' : '📋 Share'}
+            </button>
+            <Link href={`/lunch/${params.id}/summary`} style={{
+              padding: '0.6rem 1.2rem',
+              background: 'rgba(100, 200, 255, 0.2)',
+              color: '#64c8ff',
+              border: '1px solid #64c8ff',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '0.95rem',
+              transition: 'all 0.3s ease',
+              display: 'inline-block',
+            }}>
+              📊 View Summary
+            </Link>
+            <Link href="/lunch" className={styles.backBtn}>
+              Back to Voting
+            </Link>
+          </div>
         </div>
 
         {restaurants.length > 0 && (
           <div className={styles.voteSummary}>
-            <h2>Vote Summary</h2>
+            <button
+              type="button"
+              onClick={() => setShowVoteSummary(!showVoteSummary)}
+              style={{
+                width: '100%',
+                padding: '1rem 1.5rem',
+                background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(255, 217, 61, 0.1))',
+                border: '2px solid rgba(255, 107, 107, 0.3)',
+                borderRadius: '12px',
+                color: '#ff6b6b',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                transition: 'all 0.3s ease',
+                marginBottom: '1rem',
+              }}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', width: '24px' }}>
+                {showVoteSummary ? '▼' : '▶'}
+              </span>
+              <span>📊 Vote Summary</span>
+            </button>
+            {showVoteSummary && (
             <div className={styles.voteSummaryList}>
               {restaurants
                 .sort((a, b) => b.votes - a.votes)
                 .map((restaurant) => (
                   <div key={restaurant._id} className={styles.voteSummaryItem}>
+                    <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>{restaurant.emoji || '🍽️'}</span>
                     <span className={styles.restaurantNameSummary}>{restaurant.name}</span>
                     <span className={styles.voteCountSummary}>{restaurant.votes} {restaurant.votes === 1 ? 'vote' : 'votes'}</span>
                   </div>
                 ))}
             </div>
+            )}
           </div>
         )}
 
