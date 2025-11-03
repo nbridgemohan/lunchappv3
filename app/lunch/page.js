@@ -298,14 +298,9 @@ export default function LunchPage() {
             <h1>Lunch Voting</h1>
             <p>Vote on where to go for lunch today!</p>
           </div>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <Link href="/lunch/edit" className={styles.backBtn}>
-              🔧 Manage Restaurants
-            </Link>
-            <Link href="/" className={styles.backBtn}>
-              Back to Dashboard
-            </Link>
-          </div>
+          <Link href="/" className={styles.backBtn}>
+            Back to Dashboard
+          </Link>
         </div>
 
         <div className={styles.formSection}>
