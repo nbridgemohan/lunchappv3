@@ -20,6 +20,11 @@ export default function LunchPage() {
   const [messageType, setMessageType] = useState('');
   const [locationsLoading, setLocationsLoading] = useState(false);
   const [userVotedLocationId, setUserVotedLocationId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editLogoImage, setEditLogoImage] = useState(null);
+  const [editLogoPreview, setEditLogoPreview] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -95,24 +100,27 @@ export default function LunchPage() {
       return null;
     }
 
-    // Create FormData for Cloudinary
+    // Create FormData for backend upload endpoint
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('upload_preset', 'lunch_app_logo'); // You'll need to create this preset in Cloudinary
 
     try {
-      const res = await fetch('https://api.cloudinary.com/v1_1/dxawvcf9e/image/upload', {
+      const res = await fetch('/api/upload', {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formData,
       });
 
       if (!res.ok) {
-        showError('Failed to upload image', 'Upload Error');
+        const errorData = await res.json();
+        showError(errorData.error || 'Failed to upload image', 'Upload Error');
         return null;
       }
 
       const data = await res.json();
-      return data.secure_url;
+      return data.data.url;
     } catch (error) {
       console.error('Image upload error:', error);
       showError('Error uploading image: ' + error.message, 'Upload Error');
@@ -269,6 +277,97 @@ export default function LunchPage() {
     }
   };
 
+  const handleEditLogoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showError('Please upload a valid image file', 'Invalid File Type');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showError('Image size must be less than 5MB', 'File Too Large');
+      return;
+    }
+
+    setEditLogoImage(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setEditLogoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleOpenEditModal = (location) => {
+    setEditingId(location._id);
+    setEditName(location.name);
+    setEditDescription(location.description || '');
+    setEditLogoPreview(location.logoUrl || null);
+    setEditLogoImage(null);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingId(null);
+    setEditName('');
+    setEditDescription('');
+    setEditLogoImage(null);
+    setEditLogoPreview(null);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    setLocationsLoading(true);
+
+    try {
+      let logoUrl = editLogoPreview;
+
+      // Upload new image if selected
+      if (editLogoImage) {
+        logoUrl = await handleImageUpload(editLogoImage);
+        if (!logoUrl) {
+          setLocationsLoading(false);
+          return;
+        }
+      }
+
+      const res = await fetch(`/api/lunch-locations/${editingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: editName, description: editDescription, logoUrl }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('API error response:', text);
+        showError(`HTTP Error ${res.status}: ${text || res.statusText}`, 'Update Failed');
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        setLocations(locations.map((loc) => (loc._id === editingId ? data.data : loc)));
+        handleCloseEditModal();
+        showSuccess('Restaurant updated successfully!');
+      } else {
+        showError(data.error || 'Unknown error', 'Update Failed');
+      }
+    } catch (error) {
+      console.error('Error updating location:', error);
+      showError(error.message, 'Error');
+    } finally {
+      setLocationsLoading(false);
+    }
+  };
+
   if (loading) {
     return <div className={styles.loading}>Loading...</div>;
   }
@@ -357,6 +456,11 @@ export default function LunchPage() {
                   const canVote = !userVotedLocationId || userVotedLocationId === location._id;
                   return (
                     <div key={location._id} className={styles.locationCard}>
+                      {location.logoUrl && (
+                        <div className={styles.restaurantLogo}>
+                          <img src={location.logoUrl} alt={location.name} />
+                        </div>
+                      )}
                       <div className={styles.locationInfo}>
                         <div className={styles.locationHeader}>
                           <h3>{location.name}</h3>
@@ -379,12 +483,21 @@ export default function LunchPage() {
                           {hasVoted ? '✓ Voted' : 'Vote'}
                         </button>
                         {location.createdBy._id === user?._id && (
-                          <button
-                            onClick={() => handleDeleteLocation(location._id)}
-                            className={styles.deleteBtn}
-                          >
-                            Delete
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleOpenEditModal(location)}
+                              className={styles.editBtn}
+                              title="Edit restaurant"
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteLocation(location._id)}
+                              className={styles.deleteBtn}
+                            >
+                              Delete
+                            </button>
+                          </>
                         )}
                         <Link
                           href={`/lunch/${location._id}/orders`}
@@ -399,6 +512,82 @@ export default function LunchPage() {
             </div>
           )}
         </div>
+
+        {/* Edit Modal */}
+        {editingId && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContent}>
+              <div className={styles.modalHeader}>
+                <h2>Edit Restaurant</h2>
+                <button
+                  onClick={handleCloseEditModal}
+                  className={styles.closeBtn}
+                  title="Close"
+                >
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={handleSaveEdit} className={styles.modalForm}>
+                <input
+                  type="text"
+                  placeholder="Restaurant name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                  className={styles.input}
+                />
+                <textarea
+                  placeholder="Description (optional)"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className={styles.textarea}
+                />
+
+                <div className={styles.logoUploadSection}>
+                  <label htmlFor="edit-logo-upload" className={styles.uploadLabel}>
+                    📸 Restaurant Logo
+                  </label>
+                  <div className={styles.uploadContainer}>
+                    {editLogoPreview && (
+                      <div className={styles.logoPreview}>
+                        <img src={editLogoPreview} alt="Logo preview" />
+                      </div>
+                    )}
+                    <input
+                      id="edit-logo-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleEditLogoSelect}
+                      className={styles.fileInput}
+                      disabled={locationsLoading}
+                    />
+                    <label htmlFor="edit-logo-upload" className={styles.uploadButton}>
+                      {editLogoImage ? '✓ New Image Selected' : 'Choose Image'}
+                    </label>
+                    <p className={styles.uploadHint}>Max 5MB • PNG, JPG, GIF</p>
+                  </div>
+                </div>
+
+                <div className={styles.modalButtonGroup}>
+                  <button
+                    type="submit"
+                    disabled={locationsLoading}
+                    className={styles.submitBtn}
+                  >
+                    {locationsLoading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCloseEditModal}
+                    className={styles.cancelBtn}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

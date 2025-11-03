@@ -330,6 +330,26 @@
   animation: slideUp 0.5s ease-out;
 }
 
+.winnerLogo {
+  width: 200px;
+  height: 200px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 3px solid rgba(255, 107, 107, 0.4);
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.5s ease-out;
+  box-shadow: 0 8px 32px rgba(255, 107, 107, 0.2);
+}
+
+.winnerLogo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .winnerTrophy {
   font-size: 5rem;
   animation: bounce 2s infinite;

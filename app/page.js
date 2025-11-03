@@ -107,6 +107,11 @@ export default function Home() {
         {chosenRestaurant ? (
           <>
             <div className={styles.winnerContainer}>
+              {chosenRestaurant.logoUrl && voters.length > 0 && (
+                <div className={styles.winnerLogo}>
+                  <img src={chosenRestaurant.logoUrl} alt={chosenRestaurant.name} />
+                </div>
+              )}
               {voters.length > 0 ? (
                 <>
                   <div className={styles.winnerTrophy}>🏆</div>
