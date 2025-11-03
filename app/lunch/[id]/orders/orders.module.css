@@ -66,6 +66,48 @@
   background: linear-gradient(135deg, rgba(78, 205, 196, 0.05), rgba(68, 165, 194, 0.05));
 }
 
+.restaurantSelect {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.restaurantSelect label {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #4ecdc4;
+}
+
+.selectInput {
+  padding: 0.75rem;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.selectInput:hover {
+  border-color: #64c8ff;
+  background: rgba(100, 200, 255, 0.08);
+}
+
+.selectInput:focus {
+  outline: none;
+  border-color: #64c8ff;
+  background: rgba(100, 200, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(100, 200, 255, 0.2);
+}
+
+.selectInput option {
+  background-color: #1a1a1a;
+  color: #fff;
+  padding: 0.5rem;
+}
+
 .input,
 .textarea {
   padding: 0.75rem;

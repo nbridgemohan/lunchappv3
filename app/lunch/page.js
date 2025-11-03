@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './lunch.module.css';
+import { showError, showSuccess, showConfirm } from '@/lib/errorHandler';
 
 export default function LunchPage() {
   const { user, token, loading, sessionExpired } = useAuth();
@@ -26,7 +27,7 @@ export default function LunchPage() {
 
   useEffect(() => {
     if (sessionExpired) {
-      showMessage('Your session has expired. Please log in again.', 'error');
+      showError('Your session has expired. Please log in again.', 'Session Expired');
       router.push('/login');
     }
   }, [sessionExpired, router]);
@@ -38,6 +39,7 @@ export default function LunchPage() {
   }, [token, loading]);
 
   const showMessage = (msg, type) => {
+    // Keep this for non-error messages (like toast notifications)
     setMessage(msg);
     setMessageType(type);
     setTimeout(() => {
@@ -92,7 +94,7 @@ export default function LunchPage() {
       if (!res.ok) {
         const text = await res.text();
         console.error('API error response:', text);
-        showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
+        showError(`HTTP Error ${res.status}: ${text || res.statusText}`, 'Failed to Add Restaurant');
         return;
       }
 
@@ -101,13 +103,13 @@ export default function LunchPage() {
         setLocations([data.data, ...locations]);
         setNewLocation('');
         setDescription('');
-        showMessage('Restaurant added successfully!', 'success');
+        showSuccess('Restaurant added successfully!');
       } else {
-        showMessage('Error adding location: ' + (data.error || 'Unknown error'), 'error');
+        showError(data.error || 'Unknown error', 'Failed to Add Restaurant');
       }
     } catch (error) {
       console.error('Error adding location:', error);
-      showMessage('Error: ' + error.message, 'error');
+      showError(error.message, 'Error');
     } finally {
       setLocationsLoading(false);
     }
@@ -125,7 +127,7 @@ export default function LunchPage() {
       if (!res.ok) {
         const text = await res.text();
         console.error('API error response:', text);
-        showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
+        showError(`HTTP Error ${res.status}: ${text || res.statusText}`, 'Voting Failed');
         return;
       }
 
@@ -138,18 +140,23 @@ export default function LunchPage() {
         const hasVotedOnThis = updatedLocation.voters?.some((voter) => voter._id === user?._id);
         setUserVotedLocationId(hasVotedOnThis ? locationId : null);
 
-        showMessage(data.message, 'success');
+        showSuccess(data.message);
       } else {
-        showMessage('Error voting: ' + (data.error || 'Unknown error'), 'error');
+        showError(data.error || 'Unknown error', 'Voting Failed');
       }
     } catch (error) {
       console.error('Error voting:', error);
-      showMessage('Error: ' + error.message, 'error');
+      showError(error.message, 'Error');
     }
   };
 
   const handleDeleteLocation = async (locationId) => {
-    if (!confirm('Are you sure you want to delete this restaurant?')) return;
+    const confirmed = await showConfirm(
+      'Delete Restaurant?',
+      'Are you sure you want to delete this restaurant? This action cannot be undone.',
+      'Yes, Delete'
+    );
+    if (!confirmed) return;
 
     try {
       const res = await fetch(`/api/lunch-locations/${locationId}`, {
@@ -162,20 +169,20 @@ export default function LunchPage() {
       if (!res.ok) {
         const text = await res.text();
         console.error('API error response:', text);
-        showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
+        showError(`HTTP Error ${res.status}: ${text || res.statusText}`, 'Delete Failed');
         return;
       }
 
       const data = await res.json();
       if (data.success) {
         setLocations(locations.filter((loc) => loc._id !== locationId));
-        showMessage('Restaurant deleted successfully!', 'success');
+        showSuccess('Restaurant deleted successfully!');
       } else {
-        showMessage('Error deleting location: ' + (data.error || 'Unknown error'), 'error');
+        showError(data.error || 'Unknown error', 'Delete Failed');
       }
     } catch (error) {
       console.error('Error deleting location:', error);
-      showMessage('Error: ' + error.message, 'error');
+      showError(error.message, 'Error');
     }
   };
 
@@ -201,29 +208,32 @@ export default function LunchPage() {
           </Link>
         </div>
 
-        <form onSubmit={handleAddLocation} className={styles.form}>
-          <input
-            type="text"
-            placeholder="Restaurant name"
-            value={newLocation}
-            onChange={(e) => setNewLocation(e.target.value)}
-            required
-            className={styles.input}
-          />
-          <textarea
-            placeholder="Description (optional)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className={styles.textarea}
-          />
-          <button
-            type="submit"
-            disabled={locationsLoading}
-            className={styles.submitBtn}
-          >
-            {locationsLoading ? 'Adding...' : 'Add Restaurant'}
-          </button>
-        </form>
+        <div className={styles.formSection}>
+          <h2 className={styles.formTitle}>🍽️ Add a New Restaurant</h2>
+          <form onSubmit={handleAddLocation} className={styles.form}>
+            <input
+              type="text"
+              placeholder="Restaurant name"
+              value={newLocation}
+              onChange={(e) => setNewLocation(e.target.value)}
+              required
+              className={styles.input}
+            />
+            <textarea
+              placeholder="Description (optional)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className={styles.textarea}
+            />
+            <button
+              type="submit"
+              disabled={locationsLoading}
+              className={styles.submitBtn}
+            >
+              {locationsLoading ? 'Adding...' : 'Add Restaurant'}
+            </button>
+          </form>
+        </div>
 
         <div className={styles.votingSection}>
           <h2>Vote for your lunch spot</h2>

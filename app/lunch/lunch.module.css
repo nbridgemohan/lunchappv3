@@ -16,26 +16,41 @@
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #333;
+  align-items: flex-start;
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  border-bottom: 2px solid rgba(255, 107, 107, 0.3);
   width: 100%;
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .header h1 {
-  font-size: 2.5rem;
+  font-size: 3rem;
   margin: 0;
-  background: linear-gradient(to right, #ff6b6b, #ffd93d);
+  background: linear-gradient(135deg, #ff6b6b, #ffd93d);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  font-weight: 700;
+  letter-spacing: -1px;
 }
 
 .header p {
   margin: 0.5rem 0 0 0;
   font-size: 1.1rem;
-  opacity: 0.9;
+  opacity: 0.8;
+  font-weight: 300;
 }
 
 .backBtn {
@@ -55,15 +70,49 @@
   transform: translateY(-2px);
 }
 
+.formSection {
+  margin-bottom: 3rem;
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.formTitle {
+  font-size: 1.6rem;
+  color: #ff6b6b;
+  margin: 0 0 1.5rem 0;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
 .form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin: 2rem 0;
-  padding: 1.5rem;
-  border: 1px solid #333;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.05), rgba(255, 217, 61, 0.05));
+  padding: 2rem;
+  border: 2px solid rgba(255, 107, 107, 0.2);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.08), rgba(255, 217, 61, 0.08));
+  animation: fadeIn 0.6s ease-out;
+  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .input,
@@ -91,35 +140,45 @@
 }
 
 .submitBtn {
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(to right, #ff6b6b, #ffd93d);
+  padding: 0.9rem 1.8rem;
+  background: linear-gradient(135deg, #ff6b6b, #ffd93d);
   color: #000;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
+  letter-spacing: 0.3px;
 }
 
 .submitBtn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(255, 107, 107, 0.4);
+}
+
+.submitBtn:active:not(:disabled) {
+  transform: translateY(-1px);
 }
 
 .submitBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 .votingSection {
-  margin-top: 3rem;
+  margin-top: 0;
 }
 
 .votingSection h2 {
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
+  font-size: 2rem;
+  margin-bottom: 2rem;
   color: #ffd93d;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  animation: fadeIn 0.7s ease-out 0.2s both;
 }
 
 .empty {
@@ -131,23 +190,45 @@
 .locationsList {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
+  animation: fadeIn 0.8s ease-out 0.3s both;
 }
 
 .locationCard {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border: 1px solid #333;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.05), rgba(255, 217, 61, 0.05));
-  transition: all 0.3s ease;
+  padding: 1.75rem;
+  border: 2px solid rgba(255, 107, 107, 0.15);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.08), rgba(255, 217, 61, 0.08));
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.locationCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+
+.locationCard:hover::before {
+  left: 100%;
 }
 
 .locationCard:hover {
   border-color: #ff6b6b;
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 217, 61, 0.1));
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(255, 217, 61, 0.12));
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(255, 107, 107, 0.2);
 }
 
 .locationInfo {
@@ -163,28 +244,35 @@
 
 .locationHeader h3 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.2px;
 }
 
 .votes {
-  background: rgba(255, 107, 107, 0.2);
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 217, 61, 0.2));
   color: #ff6b6b;
-  padding: 0.3rem 0.8rem;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 0.9rem;
+  padding: 0.4rem 0.95rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  white-space: nowrap;
 }
 
 .description {
-  margin: 0.5rem 0;
-  opacity: 0.8;
+  margin: 0.75rem 0;
+  opacity: 0.85;
   font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 .createdBy {
   margin: 0.5rem 0 0 0;
-  opacity: 0.6;
+  opacity: 0.7;
   font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .actions {
@@ -195,60 +283,75 @@
 .voteBtn,
 .deleteBtn,
 .ordersBtn {
-  padding: 0.6rem 1rem;
+  padding: 0.65rem 1.25rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   display: inline-block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .voteBtn {
-  background: rgba(255, 107, 107, 0.2);
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 107, 107, 0.15));
   color: #ff6b6b;
-  border: 1px solid #ff6b6b;
+  border: 1.5px solid #ff6b6b;
 }
 
-.voteBtn:hover {
-  background: rgba(255, 107, 107, 0.3);
+.voteBtn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.4), rgba(255, 107, 107, 0.25));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
 }
 
 .voteBtn.voted {
-  background: rgba(76, 175, 80, 0.2);
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.3), rgba(76, 175, 80, 0.15));
   color: #4caf50;
   border-color: #4caf50;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+}
+
+.voteBtn.voted:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.3);
 }
 
 .voteBtn:disabled,
 .voteBtn.disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
-  background: rgba(100, 100, 100, 0.2);
-  color: #888;
-  border-color: #888;
+  background: rgba(100, 100, 100, 0.15);
+  color: #999;
+  border-color: #999;
+  box-shadow: none;
+  transform: none;
 }
 
 .deleteBtn {
-  background: rgba(244, 67, 54, 0.2);
+  background: linear-gradient(135deg, rgba(244, 67, 54, 0.3), rgba(244, 67, 54, 0.15));
   color: #f44336;
-  border: 1px solid #f44336;
+  border: 1.5px solid #f44336;
 }
 
 .deleteBtn:hover {
-  background: rgba(244, 67, 54, 0.3);
+  background: linear-gradient(135deg, rgba(244, 67, 54, 0.4), rgba(244, 67, 54, 0.25));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
 }
 
 .ordersBtn {
-  background: rgba(100, 200, 255, 0.2);
+  background: linear-gradient(135deg, rgba(100, 200, 255, 0.3), rgba(100, 200, 255, 0.15));
   color: #64c8ff;
-  border: 1px solid #64c8ff;
+  border: 1.5px solid #64c8ff;
 }
 
 .ordersBtn:hover {
-  background: rgba(100, 200, 255, 0.3);
+  background: linear-gradient(135deg, rgba(100, 200, 255, 0.4), rgba(100, 200, 255, 0.25));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(100, 200, 255, 0.3);
 }
 
 .loading {

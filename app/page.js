@@ -107,30 +107,44 @@ export default function Home() {
         {chosenRestaurant ? (
           <>
             <div className={styles.winnerContainer}>
-              <div className={styles.winnerTrophy}>🏆</div>
-              <h2 className={styles.winnerTitle}>{chosenRestaurant.name}</h2>
-              {chosenRestaurant.description && (
+              {voters.length > 0 ? (
+                <>
+                  <div className={styles.winnerTrophy}>🏆</div>
+                  <h2 className={styles.winnerTitle}>{chosenRestaurant.name}</h2>
+                </>
+              ) : (
+                <>
+                  <div className={styles.awaitingVotes}>🤔</div>
+                  <h2 className={styles.winnerTitle} style={{ color: '#ffd93d' }}>What's for Lunch Today?</h2>
+                  <p className={styles.awaitingVotesText}>{chosenRestaurant.name} is waiting for votes...</p>
+                </>
+              )}
+              {chosenRestaurant.description && voters.length > 0 && (
                 <p className={styles.winnerDescription}>{chosenRestaurant.description}</p>
               )}
-              <div className={styles.votersList}>
-                <h3>Team is going to:</h3>
-                <div className={styles.voters}>
-                  {voters.map((voter, index) => (
-                    <div key={voter._id} className={styles.voterBadge}>
-                      <span className={styles.voterNumber}>{index + 1}</span>
-                      <span className={styles.voterName}>{voter.username}</span>
+              {voters.length > 0 && (
+                <>
+                  <div className={styles.votersList}>
+                    <h3>Team is going to:</h3>
+                    <div className={styles.voters}>
+                      {voters.map((voter, index) => (
+                        <div key={voter._id} className={styles.voterBadge}>
+                          <span className={styles.voterNumber}>{index + 1}</span>
+                          <span className={styles.voterName}>{voter.username}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-              <div className={styles.votesSummary}>
-                <span className={styles.voteCount}>{voters.length} {voters.length === 1 ? 'person' : 'people'} voted</span>
-              </div>
+                  </div>
+                  <div className={styles.votesSummary}>
+                    <span className={styles.voteCount}>{voters.length} {voters.length === 1 ? 'person' : 'people'} voted</span>
+                  </div>
+                </>
+              )}
               <Link
-                href={`/lunch/${chosenRestaurant._id}/orders`}
+                href="/lunch"
                 className={styles.orderButton}
               >
-                📋 Order Summary & Add Orders
+                {voters.length > 0 ? '📋 Order Summary & Add Orders' : '🗳️ Go Vote Now!'}
               </Link>
             </div>
           </>

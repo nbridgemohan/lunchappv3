@@ -5,11 +5,14 @@ import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from './orders.module.css';
+import { showError, showSuccess, showConfirm } from '@/lib/errorHandler';
 
 export default function OrdersPage({ params }) {
   const { user, token, loading, sessionExpired } = useAuth();
   const router = useRouter();
   const [location, setLocation] = useState(null);
+  const [restaurants, setRestaurants] = useState([]);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState(params.id);
   const [orders, setOrders] = useState([]);
   const [item, setItem] = useState('');
   const [cost, setCost] = useState('');
@@ -34,10 +37,18 @@ export default function OrdersPage({ params }) {
 
   useEffect(() => {
     if (!loading && token && params.id) {
+      fetchRestaurants();
       fetchLocation();
       fetchOrders();
     }
   }, [token, loading, params.id]);
+
+  useEffect(() => {
+    // Update orders when restaurant selection changes
+    if (!loading && token && selectedRestaurantId) {
+      fetchOrders();
+    }
+  }, [selectedRestaurantId, token, loading]);
 
   const showMessage = (msg, type) => {
     setMessage(msg);
@@ -48,9 +59,27 @@ export default function OrdersPage({ params }) {
     }, 3000);
   };
 
+  const fetchRestaurants = async () => {
+    try {
+      const res = await fetch('/api/lunch-locations');
+
+      if (!res.ok) {
+        console.error('Failed to fetch restaurants');
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        setRestaurants(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching restaurants:', error);
+    }
+  };
+
   const fetchLocation = async () => {
     try {
-      const res = await fetch(`/api/lunch-locations/${params.id}`);
+      const res = await fetch(`/api/lunch-locations/${selectedRestaurantId}`);
 
       if (!res.ok) {
         console.error('Failed to fetch location');
@@ -68,7 +97,7 @@ export default function OrdersPage({ params }) {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch(`/api/lunch-orders?locationId=${params.id}`);
+      const res = await fetch(`/api/lunch-orders?locationId=${selectedRestaurantId}`);
 
       if (!res.ok) {
         console.error('Failed to fetch orders');
@@ -102,7 +131,7 @@ export default function OrdersPage({ params }) {
         if (!res.ok) {
           const text = await res.text();
           console.error('API error response:', text);
-          showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
+          showError(`HTTP Error ${res.status}: ${text || res.statusText}`, 'Update Failed');
           return;
         }
 
@@ -110,9 +139,9 @@ export default function OrdersPage({ params }) {
         if (data.success) {
           setOrders(orders.map((o) => (o._id === editingId ? data.data : o)));
           setEditingId(null);
-          showMessage('Order updated successfully!', 'success');
+          showSuccess('Order updated successfully!');
         } else {
-          showMessage('Error updating order: ' + (data.error || 'Unknown error'), 'error');
+          showError(data.error || 'Unknown error', 'Update Failed');
         }
       } else {
         const res = await fetch('/api/lunch-orders', {
@@ -122,7 +151,7 @@ export default function OrdersPage({ params }) {
             'Authorization': `Bearer ${token}`,
           },
           body: JSON.stringify({
-            locationId: params.id,
+            locationId: selectedRestaurantId,
             item,
             cost: parseFloat(cost),
             notes,
@@ -132,16 +161,16 @@ export default function OrdersPage({ params }) {
         if (!res.ok) {
           const text = await res.text();
           console.error('API error response:', text);
-          showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
+          showError(`HTTP Error ${res.status}: ${text || res.statusText}`, 'Order Failed');
           return;
         }
 
         const data = await res.json();
         if (data.success) {
           setOrders([data.data, ...orders]);
-          showMessage('Order created successfully!', 'success');
+          showSuccess('Order created successfully!');
         } else {
-          showMessage('Error creating order: ' + (data.error || 'Unknown error'), 'error');
+          showError(data.error || 'Unknown error', 'Order Failed');
         }
       }
       setItem('');
@@ -149,7 +178,7 @@ export default function OrdersPage({ params }) {
       setNotes('');
     } catch (error) {
       console.error('Error submitting order:', error);
-      showMessage('Error: ' + error.message, 'error');
+      showError(error.message, 'Error');
     } finally {
       setOrdersLoading(false);
     }
@@ -170,7 +199,12 @@ export default function OrdersPage({ params }) {
   };
 
   const handleDelete = async (orderId) => {
-    if (!confirm('Are you sure you want to delete this order?')) return;
+    const confirmed = await showConfirm(
+      'Delete Order?',
+      'Are you sure you want to delete this order? This action cannot be undone.',
+      'Yes, Delete'
+    );
+    if (!confirmed) return;
 
     try {
       const res = await fetch(`/api/lunch-orders/${orderId}`, {
@@ -183,20 +217,20 @@ export default function OrdersPage({ params }) {
       if (!res.ok) {
         const text = await res.text();
         console.error('API error response:', text);
-        showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
+        showError(`HTTP Error ${res.status}: ${text || res.statusText}`, 'Delete Failed');
         return;
       }
 
       const data = await res.json();
       if (data.success) {
         setOrders(orders.filter((o) => o._id !== orderId));
-        showMessage('Order deleted successfully!', 'success');
+        showSuccess('Order deleted successfully!');
       } else {
-        showMessage('Error deleting order: ' + (data.error || 'Unknown error'), 'error');
+        showError(data.error || 'Unknown error', 'Delete Failed');
       }
     } catch (error) {
       console.error('Error deleting order:', error);
-      showMessage('Error: ' + error.message, 'error');
+      showError(error.message, 'Error');
     }
   };
 
@@ -225,6 +259,26 @@ export default function OrdersPage({ params }) {
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.restaurantSelect}>
+            <label htmlFor="restaurant">Restaurant:</label>
+            <select
+              id="restaurant"
+              value={selectedRestaurantId}
+              onChange={(e) => {
+                setSelectedRestaurantId(e.target.value);
+                setLocation(restaurants.find((r) => r._id === e.target.value) || null);
+              }}
+              className={styles.selectInput}
+            >
+              <option value="">-- Select a restaurant --</option>
+              {restaurants.map((restaurant) => (
+                <option key={restaurant._id} value={restaurant._id}>
+                  {restaurant.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <input
             type="text"
             placeholder="What do you want to order?"
