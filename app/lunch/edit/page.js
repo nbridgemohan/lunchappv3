@@ -46,7 +46,6 @@ export default function EditPage() {
 
       const data = await res.json();
       if (data.success) {
-        console.log('Fetched locations:', data.data);
         setLocations(data.data);
       } else {
         showError(data.error || 'Unknown error', 'Fetch Error');
@@ -103,9 +102,7 @@ export default function EditPage() {
 
   const userRestaurants = locations.filter((loc) => {
     const createdById = typeof loc.createdBy === 'string' ? loc.createdBy : loc.createdBy?._id;
-    const matches = createdById === user?._id;
-    console.log(`Restaurant: ${loc.name}, createdById: ${createdById}, userId: ${user?._id}, matches: ${matches}`);
-    return matches;
+    return createdById === user?.userId;
   });
 
   return (

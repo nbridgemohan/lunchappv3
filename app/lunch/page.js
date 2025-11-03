@@ -73,7 +73,7 @@ export default function LunchPage() {
 
         // Find which location the user voted for
         const userVote = data.data.find((loc) =>
-          loc.voters?.some((voter) => voter._id === user?._id)
+          loc.voters?.some((voter) => voter._id === user?.userId)
         );
         setUserVotedLocationId(userVote?._id || null);
       } else {
@@ -91,19 +91,20 @@ export default function LunchPage() {
       const res = await fetch(`/api/logo?name=${encodeURIComponent(restaurantName)}`);
 
       if (!res.ok) {
-        const errorData = await res.json();
-        showError(errorData.error || 'Failed to fetch logo', 'Logo Fetch Error');
+        // Logo not found is okay - we'll use emoji fallback
+        console.log(`No logo found for "${restaurantName}"`);
         return null;
       }
 
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.data?.image) {
+        console.log(`Logo found for "${restaurantName}": ${data.data.image}`);
         return data.data.image;
       }
       return null;
     } catch (error) {
       console.error('Error fetching logo:', error);
-      showError('Error fetching logo: ' + error.message, 'Error');
+      // Silently fail - emoji will be used as fallback
       return null;
     } finally {
       setFetchingLogo(false);
@@ -178,7 +179,7 @@ export default function LunchPage() {
         setLocations(locations.map((loc) => (loc._id === locationId ? updatedLocation : loc)));
 
         // Update user's vote tracking
-        const hasVotedOnThis = updatedLocation.voters?.some((voter) => voter._id === user?._id);
+        const hasVotedOnThis = updatedLocation.voters?.some((voter) => voter._id === user?.userId);
         setUserVotedLocationId(hasVotedOnThis ? locationId : null);
 
         showSuccess(data.message);
@@ -368,7 +369,7 @@ export default function LunchPage() {
               {locations
                 .sort((a, b) => b.votes - a.votes)
                 .map((location) => {
-                  const hasVoted = location.voters?.some((voter) => voter._id === user?._id);
+                  const hasVoted = location.voters?.some((voter) => voter._id === user?.userId);
                   const canVote = !userVotedLocationId || userVotedLocationId === location._id;
                   return (
                     <div key={location._id} className={styles.locationCard}>
@@ -400,7 +401,7 @@ export default function LunchPage() {
                         >
                           {hasVoted ? '✓ Voted' : 'Vote'}
                         </button>
-                        {location.createdBy._id === user?._id && (
+                        {location.createdBy._id === user?.userId && (
                           <>
                             <button
                               onClick={() => handleOpenEditModal(location)}
