@@ -167,13 +167,13 @@ export default function Home() {
                   <button
                     onClick={handleShareUrl}
                     style={{
-                      padding: '0.6rem 1.2rem',
+                      padding: '1rem 2rem',
                       background: 'linear-gradient(to right, #ff6b6b, #ffd93d)',
                       color: '#000',
                       border: 'none',
                       borderRadius: '8px',
                       textDecoration: 'none',
-                      fontSize: '0.95rem',
+                      fontSize: '1.1rem',
                       fontWeight: '600',
                       transition: 'all 0.3s ease',
                       cursor: 'pointer',
