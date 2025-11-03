@@ -4,7 +4,11 @@ import { authenticateRequest } from '@/lib/auth';
 
 export async function POST(request, { params }) {
   try {
-    const { user } = await authenticateRequest(request);
+    const { authenticated, user, response } = await authenticateRequest(request);
+
+    if (!authenticated) {
+      return response;
+    }
 
     await dbConnect();
     const location = await LunchLocation.findById(params.id);

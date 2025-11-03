@@ -34,7 +34,11 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
-    const { user } = await authenticateRequest(request);
+    const { authenticated, user, response } = await authenticateRequest(request);
+
+    if (!authenticated) {
+      return response;
+    }
 
     await dbConnect();
     const order = await LunchOrder.findById(params.id);
@@ -89,7 +93,11 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const { user } = await authenticateRequest(request);
+    const { authenticated, user, response } = await authenticateRequest(request);
+
+    if (!authenticated) {
+      return response;
+    }
 
     await dbConnect();
     const order = await LunchOrder.findById(params.id);

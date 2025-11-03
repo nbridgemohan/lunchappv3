@@ -37,7 +37,11 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { user } = await authenticateRequest(request);
+    const { authenticated, user, response } = await authenticateRequest(request);
+
+    if (!authenticated) {
+      return response;
+    }
 
     await dbConnect();
     const { locationId, item, cost, notes } = await request.json();
