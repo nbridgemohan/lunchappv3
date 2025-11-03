@@ -88,17 +88,21 @@
 }
 
 .lunchBtn {
-  padding: 0.6rem 1.2rem;
+  padding: 0.5rem;
   background: linear-gradient(to right, #ff6b6b, #ffd93d);
   color: #000;
   border: none;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
 }
 
 .lunchBtn:hover {
@@ -107,15 +111,20 @@
 }
 
 .logoutBtn {
-  padding: 0.6rem 1.2rem;
+  padding: 0.5rem;
   background: linear-gradient(to right, #ff6464, #ff4757);
   color: #fff;
   border: none;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
 }
 
 .logoutBtn:hover {

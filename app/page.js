@@ -96,8 +96,8 @@ export default function Home() {
           {user && (
             <div className={styles.userInfo}>
               <span>Welcome, {user.username}!</span>
-              <Link href="/lunch" className={styles.lunchBtn}>
-                Go to Lunch Voting
+              <Link href="/lunch" className={styles.lunchBtn} title="Go to Lunch Voting">
+                🗳️
               </Link>
               <button
                 onClick={() => {
@@ -105,8 +105,9 @@ export default function Home() {
                   router.push('/login');
                 }}
                 className={styles.logoutBtn}
+                title="Logout"
               >
-                Logout
+                🚪
               </button>
             </div>
           )}
