@@ -7,7 +7,7 @@ import Link from 'next/link';
 import styles from './orders.module.css';
 
 export default function OrdersPage({ params }) {
-  const { user, token, loading } = useAuth();
+  const { user, token, loading, sessionExpired } = useAuth();
   const router = useRouter();
   const [location, setLocation] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -24,6 +24,13 @@ export default function OrdersPage({ params }) {
       router.push('/login');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (sessionExpired) {
+      showMessage('Your session has expired. Please log in again.', 'error');
+      router.push('/login');
+    }
+  }, [sessionExpired, router]);
 
   useEffect(() => {
     if (!loading && token && params.id) {
@@ -43,11 +50,7 @@ export default function OrdersPage({ params }) {
 
   const fetchLocation = async () => {
     try {
-      const res = await fetch(`/api/lunch-locations/${params.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(`/api/lunch-locations/${params.id}`);
 
       if (!res.ok) {
         console.error('Failed to fetch location');
@@ -65,11 +68,7 @@ export default function OrdersPage({ params }) {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch(`/api/lunch-orders?locationId=${params.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(`/api/lunch-orders?locationId=${params.id}`);
 
       if (!res.ok) {
         console.error('Failed to fetch orders');

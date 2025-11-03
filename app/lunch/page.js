@@ -7,7 +7,7 @@ import Link from 'next/link';
 import styles from './lunch.module.css';
 
 export default function LunchPage() {
-  const { user, token, loading } = useAuth();
+  const { user, token, loading, sessionExpired } = useAuth();
   const router = useRouter();
 
   const [locations, setLocations] = useState([]);
@@ -22,6 +22,13 @@ export default function LunchPage() {
       router.push('/login');
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (sessionExpired) {
+      showMessage('Your session has expired. Please log in again.', 'error');
+      router.push('/login');
+    }
+  }, [sessionExpired, router]);
 
   useEffect(() => {
     if (!loading && token) {
@@ -40,11 +47,7 @@ export default function LunchPage() {
 
   const fetchLocations = async () => {
     try {
-      const res = await fetch('/api/lunch-locations', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const res = await fetch('/api/lunch-locations');
 
       if (!res.ok) {
         const text = await res.text();

@@ -4,21 +4,20 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import PieChart from '@/components/PieChart';
 import styles from './page.module.css';
 
 const APP_VERSION = '1.0.0';
 
 export default function Home() {
-  const { user, token, loading, logout } = useAuth();
+  const { user, token, loading, logout, sessionExpired } = useAuth();
   const router = useRouter();
 
-  const [items, setItems] = useState([]);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [itemLoading, setItemLoading] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [chosenRestaurant, setChosenRestaurant] = useState(null);
+  const [voters, setVoters] = useState([]);
   const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+  const [messageType, setMessageType] = useState('');
+  const [pageLoading, setPageLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -27,8 +26,15 @@ export default function Home() {
   }, [user, loading, router]);
 
   useEffect(() => {
+    if (sessionExpired) {
+      showMessage('Your session has expired. Please log in again.', 'error');
+      router.push('/login');
+    }
+  }, [sessionExpired, router]);
+
+  useEffect(() => {
     if (!loading && token) {
-      fetchItems();
+      fetchTodaysWinner();
     }
   }, [token, loading]);
 
@@ -41,185 +47,31 @@ export default function Home() {
     }, 3000);
   };
 
-  const checkHealth = async () => {
+  const fetchTodaysWinner = async () => {
     try {
-      const res = await fetch('/api/health');
-      const data = await res.json();
-      if (data.success) {
-        showMessage('MongoDB connection OK!', 'success');
-      } else {
-        showMessage('MongoDB error: ' + (data.error || 'Unknown'), 'error');
-      }
-    } catch (error) {
-      showMessage('Health check failed: ' + error.message, 'error');
-    }
-  };
-
-  const fetchItems = async () => {
-    try {
-      const res = await fetch('/api/items', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const res = await fetch('/api/lunch-locations');
 
       if (!res.ok) {
-        const text = await res.text();
-        console.error('API error response:', text);
-        showMessage(`Failed to fetch items: HTTP ${res.status}`, 'error');
+        setPageLoading(false);
         return;
       }
 
       const data = await res.json();
-      if (data.success) {
-        setItems(data.data);
-      } else {
-        console.error('API error:', data.error);
-        showMessage('Failed to fetch items: ' + (data.error || 'Unknown error'), 'error');
+      if (data.success && data.data.length > 0) {
+        const winner = data.data[0];
+        setChosenRestaurant(winner);
+        setVoters(winner.voters || []);
       }
+      setPageLoading(false);
     } catch (error) {
-      console.error('Error fetching items:', error);
-      showMessage('Error fetching items: ' + error.message, 'error');
+      console.error('Error fetching winner:', error);
+      setPageLoading(false);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setItemLoading(true);
-
-    try {
-      if (editingId) {
-        const res = await fetch(`/api/items/${editingId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ title, description }),
-        });
-
-        if (!res.ok) {
-          const text = await res.text();
-          console.error('API error response:', text);
-          showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
-          return;
-        }
-
-        const data = await res.json();
-        if (data.success) {
-          setItems(items.map((item) => (item._id === editingId ? data.data : item)));
-          setEditingId(null);
-          showMessage('Item updated successfully!', 'success');
-        } else {
-          showMessage('Error updating item: ' + (data.error || 'Unknown error'), 'error');
-        }
-      } else {
-        const res = await fetch('/api/items', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ title, description }),
-        });
-
-        if (!res.ok) {
-          const text = await res.text();
-          console.error('API error response:', text);
-          showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
-          return;
-        }
-
-        const data = await res.json();
-        if (data.success) {
-          setItems([data.data, ...items]);
-          showMessage('Item added successfully!', 'success');
-        } else {
-          showMessage('Error adding item: ' + (data.error || 'Unknown error'), 'error');
-        }
-      }
-      setTitle('');
-      setDescription('');
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      showMessage('Error: ' + error.message, 'error');
-    } finally {
-      setItemLoading(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure?')) return;
-
-    try {
-      const res = await fetch(`/api/items/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error('API error response:', text);
-        showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
-        return;
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setItems(items.filter((item) => item._id !== id));
-        showMessage('Item deleted successfully!', 'success');
-      } else {
-        showMessage('Error deleting item: ' + (data.error || 'Unknown error'), 'error');
-      }
-    } catch (error) {
-      console.error('Error deleting item:', error);
-      showMessage('Error: ' + error.message, 'error');
-    }
-  };
-
-  const handleEdit = (item) => {
-    setTitle(item.title);
-    setDescription(item.description);
-    setEditingId(item._id);
-  };
-
-  const handleCancel = () => {
-    setTitle('');
-    setDescription('');
-    setEditingId(null);
-  };
-
-  const toggleComplete = async (item) => {
-    try {
-      const res = await fetch(`/api/items/${item._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ ...item, completed: !item.completed }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error('API error response:', text);
-        showMessage(`HTTP Error ${res.status}: ${text || res.statusText}`, 'error');
-        return;
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setItems(items.map((i) => (i._id === item._id ? data.data : i)));
-      } else {
-        showMessage('Error updating item: ' + (data.error || 'Unknown error'), 'error');
-      }
-    } catch (error) {
-      console.error('Error updating item:', error);
-      showMessage('Error: ' + error.message, 'error');
-    }
-  };
+  if (loading || pageLoading) {
+    return <div className={styles.loading}>Loading...</div>;
+  }
 
   return (
     <main className={styles.main}>
@@ -231,8 +83,8 @@ export default function Home() {
       <div className={styles.container}>
         <div className={styles.header}>
           <div>
-            <h1>Lunch App</h1>
-            <p>Organize your lunch preferences and dietary needs</p>
+            <h1>Lunch Dashboard</h1>
+            <p>Today's lunch coordination</p>
           </div>
           {user && (
             <div className={styles.userInfo}>
@@ -253,87 +105,39 @@ export default function Home() {
           )}
         </div>
 
-        <button onClick={checkHealth} className={styles.healthBtn}>
-          Check DB Connection
-        </button>
+        {chosenRestaurant ? (
+          <>
+            <div className={styles.winnerSection}>
+              <h2>🎉 Today's Winner: {chosenRestaurant.name}</h2>
+              {chosenRestaurant.description && (
+                <p className={styles.description}>{chosenRestaurant.description}</p>
+              )}
+              <p className={styles.voteCount}>
+                Votes: {chosenRestaurant.votes}
+              </p>
+            </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <input
-            type="text"
-            placeholder="Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            className={styles.input}
-          />
-          <textarea
-            placeholder="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            className={styles.textarea}
-          />
-          <div className={styles.buttonGroup}>
-            <button
-              type="submit"
-              disabled={itemLoading}
-              className={styles.submitBtn}
+            <div className={styles.chartSection}>
+              <h3>Voting Breakdown</h3>
+              <PieChart restaurant={chosenRestaurant} voters={voters} />
+            </div>
+
+            <Link
+              href={`/lunch/${chosenRestaurant._id}/orders`}
+              className={styles.ordersLink}
             >
-              {itemLoading ? 'Saving...' : editingId ? 'Update' : 'Add Item'}
-            </button>
-            {editingId && (
-              <button
-                type="button"
-                onClick={handleCancel}
-                className={styles.cancelBtn}
-              >
-                Cancel
-              </button>
-            )}
+              View/Add Orders
+            </Link>
+          </>
+        ) : (
+          <div className={styles.empty}>
+            <p>No restaurants have been voted on yet.</p>
+            <Link href="/lunch" className={styles.lunchBtn}>
+              Go vote for a restaurant!
+            </Link>
           </div>
-        </form>
+        )}
 
-        <div className={styles.itemsList}>
-          {items.length === 0 ? (
-            <p className={styles.empty}>No items yet. Create one above!</p>
-          ) : (
-            items.map((item) => (
-              <div
-                key={item._id}
-                className={`${styles.item} ${
-                  item.completed ? styles.completed : ''
-                }`}
-              >
-                <div className={styles.itemContent}>
-                  <input
-                    type="checkbox"
-                    checked={item.completed}
-                    onChange={() => toggleComplete(item)}
-                    className={styles.checkbox}
-                  />
-                  <div>
-                    <h3>{item.title}</h3>
-                    <p>{item.description}</p>
-                  </div>
-                </div>
-                <div className={styles.itemActions}>
-                  <button
-                    onClick={() => handleEdit(item)}
-                    className={styles.editBtn}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item._id)}
-                    className={styles.deleteBtn}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
         <div className={styles.version}>v{APP_VERSION}</div>
       </div>
     </main>
