@@ -80,8 +80,9 @@
 .input:focus,
 .textarea:focus {
   outline: none;
-  border-color: #4ecdc4;
-  background: rgba(78, 205, 196, 0.1);
+  border-color: #64c8ff;
+  background: rgba(100, 200, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(100, 200, 255, 0.2);
 }
 
 .textarea {
