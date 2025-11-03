@@ -21,6 +21,7 @@ export default function LunchPage() {
   const [messageType, setMessageType] = useState('');
   const [locationsLoading, setLocationsLoading] = useState(false);
   const [userVotedLocationId, setUserVotedLocationId] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -215,7 +216,15 @@ export default function LunchPage() {
         </div>
 
         <div className={styles.formSection}>
-          <h2 className={styles.formTitle}>🍽️ Add a New Restaurant</h2>
+          <button
+            type="button"
+            onClick={() => setShowAddForm(!showAddForm)}
+            className={styles.formToggle}
+          >
+            <span className={styles.toggleIcon}>{showAddForm ? '▼' : '▶'}</span>
+            <span>🍽️ Add a New Restaurant</span>
+          </button>
+          {showAddForm && (
           <form onSubmit={handleAddLocation} className={styles.form}>
             <input
               type="text"
@@ -261,6 +270,7 @@ export default function LunchPage() {
               {locationsLoading ? 'Adding...' : 'Add Restaurant'}
             </button>
           </form>
+          )}
         </div>
 
         <div className={styles.votingSection}>
