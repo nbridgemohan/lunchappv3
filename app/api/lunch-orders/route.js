@@ -2,6 +2,7 @@ import dbConnect from '@/lib/mongodb';
 import LunchOrder from '@/models/LunchOrder';
 import User from '@/models/User';
 import { authenticateRequest } from '@/lib/auth';
+import { getTrinidadDateRange } from '@/lib/dateUtils';
 
 export async function GET(request) {
   try {
@@ -10,7 +11,15 @@ export async function GET(request) {
 
     await dbConnect();
 
-    let query = {};
+    // Get today's date range in Trinidad timezone
+    const { startOfDay, endOfDay } = getTrinidadDateRange();
+
+    let query = {
+      orderDate: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+    };
     if (locationId) {
       query.locationId = locationId;
     }
@@ -61,12 +70,16 @@ export async function POST(request) {
       );
     }
 
+    // Get today's date in Trinidad timezone
+    const { startOfDay } = getTrinidadDateRange();
+
     const order = await LunchOrder.create({
       locationId,
       userId: user.userId,
       item,
       cost,
       notes,
+      orderDate: startOfDay,
     });
 
     await order.populate('locationId', 'name');

@@ -38,11 +38,6 @@ const lunchLocationSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    lunchDate: {
-      type: Date,
-      required: true,
-      index: true,
-    },
   },
   {
     timestamps: true,

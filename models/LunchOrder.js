@@ -26,6 +26,11 @@ const lunchOrderSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    orderDate: {
+      type: Date,
+      required: true,
+      index: true,
+    },
   },
   {
     timestamps: true,
