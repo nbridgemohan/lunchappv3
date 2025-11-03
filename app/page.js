@@ -115,6 +115,17 @@ export default function Home() {
 
         {chosenRestaurant ? (
           <>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2rem' }}>
+              <Link href="/lunch" className={styles.orderButton}>
+                🗳️ Vote Now!
+              </Link>
+              <Link
+                href={voters.length > 0 ? `/lunch/${chosenRestaurant._id}/summary` : '/lunch'}
+                className={styles.orderButton}
+              >
+                📋 Place Order
+              </Link>
+            </div>
             <div className={styles.winnerContainer}>
               {chosenRestaurant.logoUrl && voters.length > 0 && (
                 <div className={styles.winnerLogo}>
