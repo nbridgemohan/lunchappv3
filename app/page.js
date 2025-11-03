@@ -157,7 +157,7 @@ export default function Home() {
                   </div>
                 </>
               )}
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
                 <Link
                   href={voters.length > 0 ? `/lunch/${chosenRestaurant._id}/summary` : '/lunch'}
                   className={styles.orderButton}
