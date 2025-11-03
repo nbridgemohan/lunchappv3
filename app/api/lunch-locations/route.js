@@ -2,11 +2,22 @@ import dbConnect from '@/lib/mongodb';
 import LunchLocation from '@/models/LunchLocation';
 import User from '@/models/User';
 import { authenticateRequest } from '@/lib/auth';
+import { getTrinidadDateRange } from '@/lib/dateUtils';
 
 export async function GET(request) {
   try {
     await dbConnect();
-    const locations = await LunchLocation.find({ isActive: true })
+
+    // Get today's date range in Trinidad timezone
+    const { startOfDay, endOfDay } = getTrinidadDateRange();
+
+    const locations = await LunchLocation.find({
+      isActive: true,
+      lunchDate: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+    })
       .populate('createdBy', 'username email')
       .populate('voters', 'username email')
       .sort({ votes: -1, createdAt: -1 });
@@ -45,12 +56,16 @@ export async function POST(request) {
       );
     }
 
+    // Get today's date in Trinidad timezone
+    const { startOfDay } = getTrinidadDateRange();
+
     const location = await LunchLocation.create({
       name,
       description,
       logoUrl: logoUrl || null,
       emoji: emoji || '🍽️',
       createdBy: user.userId,
+      lunchDate: startOfDay,
     });
 
     await location.populate('createdBy', 'username email');
