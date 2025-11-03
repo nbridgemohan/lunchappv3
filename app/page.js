@@ -17,6 +17,7 @@ export default function Home() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [pageLoading, setPageLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -44,6 +45,13 @@ export default function Home() {
       setMessage('');
       setMessageType('');
     }, 3000);
+  };
+
+  const handleShareUrl = () => {
+    const url = `${window.location.origin}/lunch/${chosenRestaurant._id}/summary`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const fetchTodaysWinner = async () => {
@@ -148,12 +156,32 @@ export default function Home() {
                   </div>
                 </>
               )}
-              <Link
-                href={voters.length > 0 ? `/lunch/${chosenRestaurant._id}/summary` : '/lunch'}
-                className={styles.orderButton}
-              >
-                {voters.length > 0 ? '📋 Order Summary & Add Orders' : '🗳️ Go Vote Now!'}
-              </Link>
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', alignItems: 'center' }}>
+                <Link
+                  href={voters.length > 0 ? `/lunch/${chosenRestaurant._id}/summary` : '/lunch'}
+                  className={styles.orderButton}
+                >
+                  {voters.length > 0 ? '📋 Order Summary & Add Orders' : '🗳️ Go Vote Now!'}
+                </Link>
+                {voters.length > 0 && (
+                  <button
+                    onClick={handleShareUrl}
+                    style={{
+                      padding: '0.6rem 1.2rem',
+                      background: 'rgba(100, 200, 255, 0.2)',
+                      color: '#64c8ff',
+                      border: '1px solid #64c8ff',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {copied ? '✓ Copied!' : '📋 Share'}
+                  </button>
+                )}
+              </div>
             </div>
           </>
         ) : (

@@ -14,7 +14,7 @@ export default function SummaryPage({ params }) {
   const [restaurants, setRestaurants] = useState([]);
   const [orders, setOrders] = useState([]);
   const [copied, setCopied] = useState(false);
-  const [showVoteSummary, setShowVoteSummary] = useState(true);
+  const [showVoteSummary, setShowVoteSummary] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {

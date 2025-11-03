@@ -8,6 +8,7 @@ export async function GET(request) {
     await dbConnect();
     const locations = await LunchLocation.find({ isActive: true })
       .populate('createdBy', 'username email')
+      .populate('voters', 'username email')
       .sort({ votes: -1, createdAt: -1 });
 
     return Response.json(
