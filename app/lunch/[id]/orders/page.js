@@ -22,7 +22,7 @@ export default function OrdersPage({ params }) {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [copied, setCopied] = useState(false);
-  const [showVoteSummary, setShowVoteSummary] = useState(true);
+  const [showVoteSummary, setShowVoteSummary] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
