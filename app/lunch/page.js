@@ -14,8 +14,6 @@ export default function LunchPage() {
   const [locations, setLocations] = useState([]);
   const [newLocation, setNewLocation] = useState('');
   const [description, setDescription] = useState('');
-  const [logoImage, setLogoImage] = useState(null);
-  const [logoPreview, setLogoPreview] = useState(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [locationsLoading, setLocationsLoading] = useState(false);
@@ -23,8 +21,7 @@ export default function LunchPage() {
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [editLogoImage, setEditLogoImage] = useState(null);
-  const [editLogoPreview, setEditLogoPreview] = useState(null);
+  const [fetchingLogo, setFetchingLogo] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -84,75 +81,29 @@ export default function LunchPage() {
     }
   };
 
-  const handleImageUpload = async (file) => {
-    if (!file) return null;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      showError('Please upload a valid image file', 'Invalid File Type');
-      return null;
-    }
-
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      showError('Image size must be less than 5MB', 'File Too Large');
-      return null;
-    }
-
-    // Create FormData for backend upload endpoint
-    const formData = new FormData();
-    formData.append('file', file);
-
+  const fetchLogoFromAPI = async (restaurantName) => {
     try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
+      setFetchingLogo(true);
+      const res = await fetch(`/api/logo?name=${encodeURIComponent(restaurantName)}`);
 
       if (!res.ok) {
         const errorData = await res.json();
-        showError(errorData.error || 'Failed to upload image', 'Upload Error');
+        showError(errorData.error || 'Failed to fetch logo', 'Logo Fetch Error');
         return null;
       }
 
       const data = await res.json();
-      return data.data.url;
-    } catch (error) {
-      console.error('Image upload error:', error);
-      showError('Error uploading image: ' + error.message, 'Upload Error');
+      if (data.success) {
+        return data.data.image;
+      }
       return null;
+    } catch (error) {
+      console.error('Error fetching logo:', error);
+      showError('Error fetching logo: ' + error.message, 'Error');
+      return null;
+    } finally {
+      setFetchingLogo(false);
     }
-  };
-
-  const handleLogoSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      showError('Please upload a valid image file', 'Invalid File Type');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      showError('Image size must be less than 5MB', 'File Too Large');
-      return;
-    }
-
-    setLogoImage(file);
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setLogoPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleAddLocation = async (e) => {
@@ -162,13 +113,9 @@ export default function LunchPage() {
     try {
       let logoUrl = null;
 
-      // Upload image if selected
-      if (logoImage) {
-        logoUrl = await handleImageUpload(logoImage);
-        if (!logoUrl) {
-          setLocationsLoading(false);
-          return;
-        }
+      // Fetch logo from API Ninjas if restaurant name is provided
+      if (newLocation.trim()) {
+        logoUrl = await fetchLogoFromAPI(newLocation.trim());
       }
 
       const res = await fetch('/api/lunch-locations', {
@@ -192,8 +139,6 @@ export default function LunchPage() {
         setLocations([data.data, ...locations]);
         setNewLocation('');
         setDescription('');
-        setLogoImage(null);
-        setLogoPreview(null);
         showSuccess('Restaurant added successfully!');
       } else {
         showError(data.error || 'Unknown error', 'Failed to Add Restaurant');
@@ -277,47 +222,16 @@ export default function LunchPage() {
     }
   };
 
-  const handleEditLogoSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      showError('Please upload a valid image file', 'Invalid File Type');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      showError('Image size must be less than 5MB', 'File Too Large');
-      return;
-    }
-
-    setEditLogoImage(file);
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setEditLogoPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleOpenEditModal = (location) => {
     setEditingId(location._id);
     setEditName(location.name);
     setEditDescription(location.description || '');
-    setEditLogoPreview(location.logoUrl || null);
-    setEditLogoImage(null);
   };
 
   const handleCloseEditModal = () => {
     setEditingId(null);
     setEditName('');
     setEditDescription('');
-    setEditLogoImage(null);
-    setEditLogoPreview(null);
   };
 
   const handleSaveEdit = async (e) => {
@@ -325,15 +239,14 @@ export default function LunchPage() {
     setLocationsLoading(true);
 
     try {
-      let logoUrl = editLogoPreview;
+      // Fetch logo if name changed
+      let logoUrl = null;
+      const location = locations.find((loc) => loc._id === editingId);
 
-      // Upload new image if selected
-      if (editLogoImage) {
-        logoUrl = await handleImageUpload(editLogoImage);
-        if (!logoUrl) {
-          setLocationsLoading(false);
-          return;
-        }
+      if (editName !== location?.name) {
+        logoUrl = await fetchLogoFromAPI(editName.trim());
+      } else {
+        logoUrl = location?.logoUrl || null;
       }
 
       const res = await fetch(`/api/lunch-locations/${editingId}`, {
@@ -408,37 +321,16 @@ export default function LunchPage() {
               className={styles.textarea}
             />
 
-            <div className={styles.logoUploadSection}>
-              <label htmlFor="logo-upload" className={styles.uploadLabel}>
-                📸 Restaurant Logo (optional)
-              </label>
-              <div className={styles.uploadContainer}>
-                {logoPreview && (
-                  <div className={styles.logoPreview}>
-                    <img src={logoPreview} alt="Logo preview" />
-                  </div>
-                )}
-                <input
-                  id="logo-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoSelect}
-                  className={styles.fileInput}
-                  disabled={locationsLoading}
-                />
-                <label htmlFor="logo-upload" className={styles.uploadButton}>
-                  {logoImage ? '✓ Image Selected' : 'Choose Image'}
-                </label>
-                <p className={styles.uploadHint}>Max 5MB • PNG, JPG, GIF</p>
-              </div>
-            </div>
+            <p className={styles.uploadHint}>
+              🔍 Logo will be automatically fetched from the restaurant name
+            </p>
 
             <button
               type="submit"
-              disabled={locationsLoading}
+              disabled={locationsLoading || fetchingLogo}
               className={styles.submitBtn}
             >
-              {locationsLoading ? 'Adding...' : 'Add Restaurant'}
+              {locationsLoading || fetchingLogo ? 'Adding...' : 'Add Restaurant'}
             </button>
           </form>
         </div>
@@ -543,38 +435,17 @@ export default function LunchPage() {
                   className={styles.textarea}
                 />
 
-                <div className={styles.logoUploadSection}>
-                  <label htmlFor="edit-logo-upload" className={styles.uploadLabel}>
-                    📸 Restaurant Logo
-                  </label>
-                  <div className={styles.uploadContainer}>
-                    {editLogoPreview && (
-                      <div className={styles.logoPreview}>
-                        <img src={editLogoPreview} alt="Logo preview" />
-                      </div>
-                    )}
-                    <input
-                      id="edit-logo-upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleEditLogoSelect}
-                      className={styles.fileInput}
-                      disabled={locationsLoading}
-                    />
-                    <label htmlFor="edit-logo-upload" className={styles.uploadButton}>
-                      {editLogoImage ? '✓ New Image Selected' : 'Choose Image'}
-                    </label>
-                    <p className={styles.uploadHint}>Max 5MB • PNG, JPG, GIF</p>
-                  </div>
-                </div>
+                <p className={styles.uploadHint}>
+                  🔍 Logo will be automatically updated when restaurant name changes
+                </p>
 
                 <div className={styles.modalButtonGroup}>
                   <button
                     type="submit"
-                    disabled={locationsLoading}
+                    disabled={locationsLoading || fetchingLogo}
                     className={styles.submitBtn}
                   >
-                    {locationsLoading ? 'Saving...' : 'Save Changes'}
+                    {locationsLoading || fetchingLogo ? 'Saving...' : 'Save Changes'}
                   </button>
                   <button
                     type="button"

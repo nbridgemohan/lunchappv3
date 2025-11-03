@@ -10,7 +10,8 @@
       "Bash(dir:*)",
       "Bash(tree:*)",
       "Bash(.git)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
