@@ -114,6 +114,9 @@ export default function Home() {
               )}
               {voters.length > 0 ? (
                 <>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
+                    {chosenRestaurant.emoji || '🍽️'}
+                  </div>
                   <div className={styles.winnerTrophy}>🏆</div>
                   <h2 className={styles.winnerTitle}>{chosenRestaurant.name}</h2>
                 </>

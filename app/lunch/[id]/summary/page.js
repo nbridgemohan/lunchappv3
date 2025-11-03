@@ -191,10 +191,35 @@ export default function SummaryPage({ params }) {
               {restaurants
                 .sort((a, b) => b.votes - a.votes)
                 .map((restaurant) => (
-                  <div key={restaurant._id} className={styles.voteSummaryItem}>
-                    <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>{restaurant.emoji || '🍽️'}</span>
-                    <span className={styles.restaurantNameSummary}>{restaurant.name}</span>
-                    <span className={styles.voteCountSummary}>{restaurant.votes} {restaurant.votes === 1 ? 'vote' : 'votes'}</span>
+                  <div key={restaurant._id} style={{ marginBottom: '1.5rem', padding: '1rem', borderRadius: '8px', background: 'rgba(255, 107, 107, 0.08)' }}>
+                    <div className={styles.voteSummaryItem}>
+                      <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>{restaurant.emoji || '🍽️'}</span>
+                      <span className={styles.restaurantNameSummary}>{restaurant.name}</span>
+                      <span className={styles.voteCountSummary}>{restaurant.votes} {restaurant.votes === 1 ? 'vote' : 'votes'}</span>
+                    </div>
+                    {restaurant.voters && restaurant.voters.length > 0 && (
+                      <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 107, 107, 0.2)' }}>
+                        <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '0.5rem' }}>Voted by:</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          {restaurant.voters.map((voter) => (
+                            <span
+                              key={voter._id}
+                              style={{
+                                display: 'inline-block',
+                                padding: '0.4rem 0.8rem',
+                                background: 'rgba(100, 200, 255, 0.15)',
+                                color: '#64c8ff',
+                                borderRadius: '6px',
+                                fontSize: '0.85rem',
+                                fontWeight: '500',
+                              }}
+                            >
+                              {voter.username}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
             </div>
