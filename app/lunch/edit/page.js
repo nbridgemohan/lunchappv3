@@ -11,8 +11,14 @@ export default function EditPage() {
   const { user, token, loading, sessionExpired } = useAuth();
   const router = useRouter();
 
+  const FOOD_EMOJIS = ['🍕', '🍔', '🍟', '🌮', '🌯', '🥗', '🍜', '🍱', '🍛', '🍝', '🍲', '🥘', '🍣', '🍤', '🍗', '🌭', '🥪', '🍖', '🌶️', '🥠', '🍚', '🥟'];
+
   const [locations, setLocations] = useState([]);
   const [locationsLoading, setLocationsLoading] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editEmoji, setEditEmoji] = useState('🍽️');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -53,6 +59,57 @@ export default function EditPage() {
     } catch (error) {
       console.error('Error fetching locations:', error);
       showError('Error fetching locations: ' + error.message, 'Error');
+    }
+  };
+
+  const handleOpenEditModal = (location) => {
+    setEditingId(location._id);
+    setEditName(location.name);
+    setEditDescription(location.description || '');
+    setEditEmoji(location.emoji || '🍽️');
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingId(null);
+    setEditName('');
+    setEditDescription('');
+    setEditEmoji('🍽️');
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    setLocationsLoading(true);
+
+    try {
+      const res = await fetch(`/api/lunch-locations/${editingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: editName, description: editDescription, emoji: editEmoji }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('API error response:', text);
+        showError(`HTTP Error ${res.status}: ${text || res.statusText}`, 'Update Failed');
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        setLocations(locations.map((loc) => (loc._id === editingId ? data.data : loc)));
+        handleCloseEditModal();
+        showSuccess('Restaurant updated successfully!');
+      } else {
+        showError(data.error || 'Unknown error', 'Update Failed');
+      }
+    } catch (error) {
+      console.error('Error updating location:', error);
+      showError(error.message, 'Error');
+    } finally {
+      setLocationsLoading(false);
     }
   };
 
@@ -148,6 +205,13 @@ export default function EditPage() {
                     </div>
                     <div className={styles.actions}>
                       <button
+                        onClick={() => handleOpenEditModal(location)}
+                        className={styles.editBtn}
+                        title="Edit restaurant"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
                         onClick={() => handleDeleteLocation(location._id)}
                         disabled={locationsLoading}
                         className={styles.deleteBtn}
@@ -160,6 +224,78 @@ export default function EditPage() {
             </div>
           )}
         </div>
+
+        {/* Edit Modal */}
+        {editingId && (
+          <div className={styles.modalOverlay}>
+            <div className={styles.modalContent}>
+              <div className={styles.modalHeader}>
+                <h2>Edit Restaurant</h2>
+                <button
+                  onClick={handleCloseEditModal}
+                  className={styles.closeBtn}
+                  title="Close"
+                >
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={handleSaveEdit} className={styles.modalForm}>
+                <input
+                  type="text"
+                  placeholder="Restaurant name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                  className={styles.input}
+                />
+                <textarea
+                  placeholder="Description (optional)"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  className={styles.textarea}
+                />
+
+                <div className={styles.emojiSection}>
+                  <label className={styles.emojiLabel}>🎯 Pick a Food Emoji:</label>
+                  <div className={styles.emojiGrid}>
+                    {FOOD_EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        className={`${styles.emojiButton} ${editEmoji === emoji ? styles.emojiSelected : ''}`}
+                        onClick={() => setEditEmoji(emoji)}
+                        title={emoji}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <p className={styles.uploadHint}>
+                  🎨 Pick an emoji to represent this restaurant
+                </p>
+
+                <div className={styles.modalButtonGroup}>
+                  <button
+                    type="submit"
+                    disabled={locationsLoading}
+                    className={styles.submitBtn}
+                  >
+                    {locationsLoading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCloseEditModal}
+                    className={styles.cancelBtn}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

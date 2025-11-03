@@ -11,7 +11,7 @@ export default function LunchPage() {
   const { user, token, loading, sessionExpired } = useAuth();
   const router = useRouter();
 
-  const FOOD_EMOJIS = ['🍕', '🍔', '🌮', '🌯', '🥗', '🍜', '🍱', '🍛', '🍝', '🍲', '🥘', '🍣', '🍤', '🌭', '🥪', '🍖', '🌶️', '🥠', '🍚', '🥟'];
+  const FOOD_EMOJIS = ['🍕', '🍔', '🍟', '🌮', '🌯', '🥗', '🍜', '🍱', '🍛', '🍝', '🍲', '🥘', '🍣', '🍤', '🍗', '🌭', '🥪', '🍖', '🌶️', '🥠', '🍚', '🥟'];
 
   const [locations, setLocations] = useState([]);
   const [newLocation, setNewLocation] = useState('');
@@ -21,11 +21,6 @@ export default function LunchPage() {
   const [messageType, setMessageType] = useState('');
   const [locationsLoading, setLocationsLoading] = useState(false);
   const [userVotedLocationId, setUserVotedLocationId] = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [editName, setEditName] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editEmoji, setEditEmoji] = useState('🍽️');
-  const [fetchingLogo, setFetchingLogo] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -85,51 +80,19 @@ export default function LunchPage() {
     }
   };
 
-  const fetchLogoFromAPI = async (restaurantName) => {
-    try {
-      setFetchingLogo(true);
-      const res = await fetch(`/api/logo?name=${encodeURIComponent(restaurantName)}`);
-
-      if (!res.ok) {
-        // Logo not found is okay - we'll use emoji fallback
-        console.log(`No logo found for "${restaurantName}"`);
-        return null;
-      }
-
-      const data = await res.json();
-      if (data.success && data.data?.image) {
-        console.log(`Logo found for "${restaurantName}": ${data.data.image}`);
-        return data.data.image;
-      }
-      return null;
-    } catch (error) {
-      console.error('Error fetching logo:', error);
-      // Silently fail - emoji will be used as fallback
-      return null;
-    } finally {
-      setFetchingLogo(false);
-    }
-  };
 
   const handleAddLocation = async (e) => {
     e.preventDefault();
     setLocationsLoading(true);
 
     try {
-      let logoUrl = null;
-
-      // Fetch logo from API Ninjas if restaurant name is provided
-      if (newLocation.trim()) {
-        logoUrl = await fetchLogoFromAPI(newLocation.trim());
-      }
-
       const res = await fetch('/api/lunch-locations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: newLocation, description, logoUrl, emoji: selectedEmoji }),
+        body: JSON.stringify({ name: newLocation, description, emoji: selectedEmoji }),
       });
 
       if (!res.ok) {
@@ -228,66 +191,6 @@ export default function LunchPage() {
     }
   };
 
-  const handleOpenEditModal = (location) => {
-    setEditingId(location._id);
-    setEditName(location.name);
-    setEditDescription(location.description || '');
-    setEditEmoji(location.emoji || '🍽️');
-  };
-
-  const handleCloseEditModal = () => {
-    setEditingId(null);
-    setEditName('');
-    setEditDescription('');
-    setEditEmoji('🍽️');
-  };
-
-  const handleSaveEdit = async (e) => {
-    e.preventDefault();
-    setLocationsLoading(true);
-
-    try {
-      // Fetch logo if name changed
-      let logoUrl = null;
-      const location = locations.find((loc) => loc._id === editingId);
-
-      if (editName !== location?.name) {
-        logoUrl = await fetchLogoFromAPI(editName.trim());
-      } else {
-        logoUrl = location?.logoUrl || null;
-      }
-
-      const res = await fetch(`/api/lunch-locations/${editingId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name: editName, description: editDescription, logoUrl, emoji: editEmoji }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error('API error response:', text);
-        showError(`HTTP Error ${res.status}: ${text || res.statusText}`, 'Update Failed');
-        return;
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setLocations(locations.map((loc) => (loc._id === editingId ? data.data : loc)));
-        handleCloseEditModal();
-        showSuccess('Restaurant updated successfully!');
-      } else {
-        showError(data.error || 'Unknown error', 'Update Failed');
-      }
-    } catch (error) {
-      console.error('Error updating location:', error);
-      showError(error.message, 'Error');
-    } finally {
-      setLocationsLoading(false);
-    }
-  };
 
   if (loading) {
     return <div className={styles.loading}>Loading...</div>;
@@ -347,15 +250,15 @@ export default function LunchPage() {
             </div>
 
             <p className={styles.uploadHint}>
-              🔍 Logo will be automatically fetched from the restaurant name
+              🎨 Pick an emoji to represent this restaurant
             </p>
 
             <button
               type="submit"
-              disabled={locationsLoading || fetchingLogo}
+              disabled={locationsLoading}
               className={styles.submitBtn}
             >
-              {locationsLoading || fetchingLogo ? 'Adding...' : 'Add Restaurant'}
+              {locationsLoading ? 'Adding...' : 'Add Restaurant'}
             </button>
           </form>
         </div>
@@ -401,23 +304,6 @@ export default function LunchPage() {
                         >
                           {hasVoted ? '✓ Voted' : 'Vote'}
                         </button>
-                        {location.createdBy._id === user?.userId && (
-                          <>
-                            <button
-                              onClick={() => handleOpenEditModal(location)}
-                              className={styles.editBtn}
-                              title="Edit restaurant"
-                            >
-                              ✏️ Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteLocation(location._id)}
-                              className={styles.deleteBtn}
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
                         <Link
                           href={`/lunch/${location._id}/orders`}
                           className={styles.ordersBtn}
@@ -432,77 +318,6 @@ export default function LunchPage() {
           )}
         </div>
 
-        {/* Edit Modal */}
-        {editingId && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modalContent}>
-              <div className={styles.modalHeader}>
-                <h2>Edit Restaurant</h2>
-                <button
-                  onClick={handleCloseEditModal}
-                  className={styles.closeBtn}
-                  title="Close"
-                >
-                  ✕
-                </button>
-              </div>
-              <form onSubmit={handleSaveEdit} className={styles.modalForm}>
-                <input
-                  type="text"
-                  placeholder="Restaurant name"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  required
-                  className={styles.input}
-                />
-                <textarea
-                  placeholder="Description (optional)"
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  className={styles.textarea}
-                />
-
-                <div className={styles.emojiSection}>
-                  <label className={styles.emojiLabel}>🎯 Pick a Food Emoji:</label>
-                  <div className={styles.emojiGrid}>
-                    {FOOD_EMOJIS.map((emoji) => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        className={`${styles.emojiButton} ${editEmoji === emoji ? styles.emojiSelected : ''}`}
-                        onClick={() => setEditEmoji(emoji)}
-                        title={emoji}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <p className={styles.uploadHint}>
-                  🔍 Logo will be automatically updated when restaurant name changes
-                </p>
-
-                <div className={styles.modalButtonGroup}>
-                  <button
-                    type="submit"
-                    disabled={locationsLoading || fetchingLogo}
-                    className={styles.submitBtn}
-                  >
-                    {locationsLoading || fetchingLogo ? 'Saving...' : 'Save Changes'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCloseEditModal}
-                    className={styles.cancelBtn}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     </main>
   );
