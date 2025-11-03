@@ -120,7 +120,7 @@ export default function Home() {
                 🗳️ Vote Now!
               </Link>
               <Link
-                href={voters.length > 0 ? `/lunch/${chosenRestaurant._id}/summary` : '/lunch'}
+                href={voters.length > 0 ? `/lunch/${chosenRestaurant._id}/orders` : '/lunch'}
                 className={styles.orderButton}
               >
                 📋 Place Order
