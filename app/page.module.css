@@ -511,6 +511,26 @@
   box-shadow: 0 8px 16px rgba(255, 107, 107, 0.4);
 }
 
+.copyButton {
+  padding: 1rem 2rem;
+  background: linear-gradient(to right, #00d4ff, #7c3aed);
+  color: #fff;
+  text-decoration: none;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: inline-block;
+  margin-top: 1rem;
+}
+
+.copyButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 212, 255, 0.4);
+}
+
 .version {
   position: fixed;
   bottom: 1rem;

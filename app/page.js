@@ -166,7 +166,7 @@ export default function Home() {
                 {voters.length > 0 && (
                   <button
                     onClick={handleShareUrl}
-                    className={styles.orderButton}
+                    className={styles.copyButton}
                     style={{
                       marginTop: 0,
                     }}
