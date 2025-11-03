@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import styles from './page.module.css';
 
 const APP_VERSION = '1.0.0';
@@ -236,6 +237,9 @@ export default function Home() {
           {user && (
             <div className={styles.userInfo}>
               <span>Welcome, {user.username}!</span>
+              <Link href="/lunch" className={styles.lunchBtn}>
+                Go to Lunch Voting
+              </Link>
               <button
                 onClick={() => {
                   logout();
