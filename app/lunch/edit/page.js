@@ -124,11 +124,13 @@ export default function EditPage() {
                 .sort((a, b) => b.votes - a.votes)
                 .map((location) => (
                   <div key={location._id} className={styles.locationCard}>
-                    {location.logoUrl && (
-                      <div className={styles.restaurantLogo}>
+                    <div className={styles.restaurantLogo}>
+                      {location.logoUrl ? (
                         <img src={location.logoUrl} alt={location.name} />
-                      </div>
-                    )}
+                      ) : (
+                        <span className={styles.logoEmoji}>{location.emoji || '🍽️'}</span>
+                      )}
+                    </div>
                     <div className={styles.locationInfo}>
                       <div className={styles.locationHeader}>
                         <h3>{location.name}</h3>

@@ -11,9 +11,12 @@ export default function LunchPage() {
   const { user, token, loading, sessionExpired } = useAuth();
   const router = useRouter();
 
+  const FOOD_EMOJIS = ['🍕', '🍔', '🌮', '🌯', '🥗', '🍜', '🍱', '🍛', '🍝', '🍲', '🥘', '🍣', '🍤', '🌭', '🥪', '🍖', '🌶️', '🥠', '🍚', '🥟'];
+
   const [locations, setLocations] = useState([]);
   const [newLocation, setNewLocation] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedEmoji, setSelectedEmoji] = useState('🍽️');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [locationsLoading, setLocationsLoading] = useState(false);
@@ -21,6 +24,7 @@ export default function LunchPage() {
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editEmoji, setEditEmoji] = useState('🍽️');
   const [fetchingLogo, setFetchingLogo] = useState(false);
 
   useEffect(() => {
@@ -124,7 +128,7 @@ export default function LunchPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: newLocation, description, logoUrl }),
+        body: JSON.stringify({ name: newLocation, description, logoUrl, emoji: selectedEmoji }),
       });
 
       if (!res.ok) {
@@ -139,6 +143,7 @@ export default function LunchPage() {
         setLocations([data.data, ...locations]);
         setNewLocation('');
         setDescription('');
+        setSelectedEmoji('🍽️');
         showSuccess('Restaurant added successfully!');
       } else {
         showError(data.error || 'Unknown error', 'Failed to Add Restaurant');
@@ -226,12 +231,14 @@ export default function LunchPage() {
     setEditingId(location._id);
     setEditName(location.name);
     setEditDescription(location.description || '');
+    setEditEmoji(location.emoji || '🍽️');
   };
 
   const handleCloseEditModal = () => {
     setEditingId(null);
     setEditName('');
     setEditDescription('');
+    setEditEmoji('🍽️');
   };
 
   const handleSaveEdit = async (e) => {
@@ -255,7 +262,7 @@ export default function LunchPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: editName, description: editDescription, logoUrl }),
+        body: JSON.stringify({ name: editName, description: editDescription, logoUrl, emoji: editEmoji }),
       });
 
       if (!res.ok) {
@@ -321,6 +328,23 @@ export default function LunchPage() {
               className={styles.textarea}
             />
 
+            <div className={styles.emojiSection}>
+              <label className={styles.emojiLabel}>🎯 Pick a Food Emoji:</label>
+              <div className={styles.emojiGrid}>
+                {FOOD_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    className={`${styles.emojiButton} ${selectedEmoji === emoji ? styles.emojiSelected : ''}`}
+                    onClick={() => setSelectedEmoji(emoji)}
+                    title={emoji}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <p className={styles.uploadHint}>
               🔍 Logo will be automatically fetched from the restaurant name
             </p>
@@ -348,11 +372,13 @@ export default function LunchPage() {
                   const canVote = !userVotedLocationId || userVotedLocationId === location._id;
                   return (
                     <div key={location._id} className={styles.locationCard}>
-                      {location.logoUrl && (
-                        <div className={styles.restaurantLogo}>
+                      <div className={styles.restaurantLogo}>
+                        {location.logoUrl ? (
                           <img src={location.logoUrl} alt={location.name} />
-                        </div>
-                      )}
+                        ) : (
+                          <span className={styles.logoEmoji}>{location.emoji || '🍽️'}</span>
+                        )}
+                      </div>
                       <div className={styles.locationInfo}>
                         <div className={styles.locationHeader}>
                           <h3>{location.name}</h3>
@@ -434,6 +460,23 @@ export default function LunchPage() {
                   onChange={(e) => setEditDescription(e.target.value)}
                   className={styles.textarea}
                 />
+
+                <div className={styles.emojiSection}>
+                  <label className={styles.emojiLabel}>🎯 Pick a Food Emoji:</label>
+                  <div className={styles.emojiGrid}>
+                    {FOOD_EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        className={`${styles.emojiButton} ${editEmoji === emoji ? styles.emojiSelected : ''}`}
+                        onClick={() => setEditEmoji(emoji)}
+                        title={emoji}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 <p className={styles.uploadHint}>
                   🔍 Logo will be automatically updated when restaurant name changes

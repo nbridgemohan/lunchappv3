@@ -15,6 +15,10 @@ const lunchLocationSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    emoji: {
+      type: String,
+      default: '🍽️',
+    },
     votes: {
       type: Number,
       default: 0,

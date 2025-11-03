@@ -52,7 +52,7 @@ export async function PUT(request, { params }) {
     }
 
     const data = await request.json();
-    const { name, description, logoUrl } = data;
+    const { name, description, logoUrl, emoji } = data;
 
     // Only creator can edit
     if (location.createdBy.toString() !== user.userId.toString()) {
@@ -66,6 +66,9 @@ export async function PUT(request, { params }) {
     location.description = description || location.description;
     if (logoUrl !== undefined) {
       location.logoUrl = logoUrl;
+    }
+    if (emoji !== undefined) {
+      location.emoji = emoji;
     }
     await location.save();
     await location.populate('createdBy', 'username email');

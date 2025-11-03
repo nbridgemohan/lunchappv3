@@ -35,7 +35,7 @@ export async function POST(request) {
     }
 
     await dbConnect();
-    const { name, description } = await request.json();
+    const { name, description, logoUrl, emoji } = await request.json();
 
     if (!name) {
       return Response.json(
@@ -47,6 +47,8 @@ export async function POST(request) {
     const location = await LunchLocation.create({
       name,
       description,
+      logoUrl: logoUrl || null,
+      emoji: emoji || '🍽️',
       createdBy: user.userId,
     });
 
