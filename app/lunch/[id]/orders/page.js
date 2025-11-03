@@ -372,7 +372,7 @@ export default function OrdersPage({ params }) {
                       by {order.userId.username}
                     </p>
                   </div>
-                  {order.userId._id === user?._id && (
+                  {order.userId._id === user?.userId && (
                     <div className={styles.actions}>
                       <button
                         onClick={() => handleEdit(order)}
