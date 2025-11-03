@@ -1,5 +1,6 @@
 import dbConnect from '@/lib/mongodb';
 import LunchOrder from '@/models/LunchOrder';
+import User from '@/models/User';
 import { authenticateRequest } from '@/lib/auth';
 
 export async function GET(request) {
