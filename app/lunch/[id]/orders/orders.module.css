@@ -108,6 +108,63 @@
   padding: 0.5rem;
 }
 
+.voteSummary {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border: 2px solid rgba(78, 205, 196, 0.2);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.08), rgba(68, 165, 194, 0.08));
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.voteSummary h2 {
+  font-size: 1.3rem;
+  color: #4ecdc4;
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.voteSummaryList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.voteSummaryItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #4ecdc4;
+}
+
+.restaurantNameSummary {
+  font-weight: 500;
+  color: #fff;
+}
+
+.voteCountSummary {
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.3), rgba(68, 165, 194, 0.2));
+  color: #4ecdc4;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
 .input,
 .textarea {
   padding: 0.75rem;

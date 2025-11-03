@@ -14,6 +14,8 @@ export default function LunchPage() {
   const [locations, setLocations] = useState([]);
   const [newLocation, setNewLocation] = useState('');
   const [description, setDescription] = useState('');
+  const [logoImage, setLogoImage] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [locationsLoading, setLocationsLoading] = useState(false);
@@ -77,18 +79,97 @@ export default function LunchPage() {
     }
   };
 
+  const handleImageUpload = async (file) => {
+    if (!file) return null;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showError('Please upload a valid image file', 'Invalid File Type');
+      return null;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showError('Image size must be less than 5MB', 'File Too Large');
+      return null;
+    }
+
+    // Create FormData for Cloudinary
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', 'lunch_app_logo'); // You'll need to create this preset in Cloudinary
+
+    try {
+      const res = await fetch('https://api.cloudinary.com/v1_1/dxawvcf9e/image/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        showError('Failed to upload image', 'Upload Error');
+        return null;
+      }
+
+      const data = await res.json();
+      return data.secure_url;
+    } catch (error) {
+      console.error('Image upload error:', error);
+      showError('Error uploading image: ' + error.message, 'Upload Error');
+      return null;
+    }
+  };
+
+  const handleLogoSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showError('Please upload a valid image file', 'Invalid File Type');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showError('Image size must be less than 5MB', 'File Too Large');
+      return;
+    }
+
+    setLogoImage(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleAddLocation = async (e) => {
     e.preventDefault();
     setLocationsLoading(true);
 
     try {
+      let logoUrl = null;
+
+      // Upload image if selected
+      if (logoImage) {
+        logoUrl = await handleImageUpload(logoImage);
+        if (!logoUrl) {
+          setLocationsLoading(false);
+          return;
+        }
+      }
+
       const res = await fetch('/api/lunch-locations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: newLocation, description }),
+        body: JSON.stringify({ name: newLocation, description, logoUrl }),
       });
 
       if (!res.ok) {
@@ -103,6 +184,8 @@ export default function LunchPage() {
         setLocations([data.data, ...locations]);
         setNewLocation('');
         setDescription('');
+        setLogoImage(null);
+        setLogoPreview(null);
         showSuccess('Restaurant added successfully!');
       } else {
         showError(data.error || 'Unknown error', 'Failed to Add Restaurant');
@@ -225,6 +308,32 @@ export default function LunchPage() {
               onChange={(e) => setDescription(e.target.value)}
               className={styles.textarea}
             />
+
+            <div className={styles.logoUploadSection}>
+              <label htmlFor="logo-upload" className={styles.uploadLabel}>
+                📸 Restaurant Logo (optional)
+              </label>
+              <div className={styles.uploadContainer}>
+                {logoPreview && (
+                  <div className={styles.logoPreview}>
+                    <img src={logoPreview} alt="Logo preview" />
+                  </div>
+                )}
+                <input
+                  id="logo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoSelect}
+                  className={styles.fileInput}
+                  disabled={locationsLoading}
+                />
+                <label htmlFor="logo-upload" className={styles.uploadButton}>
+                  {logoImage ? '✓ Image Selected' : 'Choose Image'}
+                </label>
+                <p className={styles.uploadHint}>Max 5MB • PNG, JPG, GIF</p>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={locationsLoading}

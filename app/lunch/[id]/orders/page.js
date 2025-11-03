@@ -37,7 +37,10 @@ export default function OrdersPage({ params }) {
 
   useEffect(() => {
     if (!loading && token && params.id) {
-      fetchRestaurants();
+      fetchRestaurants().then(() => {
+        // Set default to most voted restaurant
+        setSelectedRestaurantId(params.id);
+      });
       fetchLocation();
       fetchOrders();
     }
@@ -65,16 +68,19 @@ export default function OrdersPage({ params }) {
 
       if (!res.ok) {
         console.error('Failed to fetch restaurants');
-        return;
+        return null;
       }
 
       const data = await res.json();
       if (data.success) {
         setRestaurants(data.data);
+        // Return restaurants sorted by votes (most voted first)
+        return data.data.sort((a, b) => b.votes - a.votes);
       }
     } catch (error) {
       console.error('Error fetching restaurants:', error);
     }
+    return null;
   };
 
   const fetchLocation = async () => {
@@ -258,6 +264,22 @@ export default function OrdersPage({ params }) {
           </Link>
         </div>
 
+        {restaurants.length > 0 && (
+          <div className={styles.voteSummary}>
+            <h2>Vote Summary</h2>
+            <div className={styles.voteSummaryList}>
+              {restaurants
+                .sort((a, b) => b.votes - a.votes)
+                .map((restaurant) => (
+                  <div key={restaurant._id} className={styles.voteSummaryItem}>
+                    <span className={styles.restaurantNameSummary}>{restaurant.name}</span>
+                    <span className={styles.voteCountSummary}>{restaurant.votes} {restaurant.votes === 1 ? 'vote' : 'votes'}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.restaurantSelect}>
             <label htmlFor="restaurant">Restaurant:</label>
@@ -271,11 +293,13 @@ export default function OrdersPage({ params }) {
               className={styles.selectInput}
             >
               <option value="">-- Select a restaurant --</option>
-              {restaurants.map((restaurant) => (
-                <option key={restaurant._id} value={restaurant._id}>
-                  {restaurant.name}
-                </option>
-              ))}
+              {restaurants
+                .sort((a, b) => b.votes - a.votes)
+                .map((restaurant) => (
+                  <option key={restaurant._id} value={restaurant._id}>
+                    {restaurant.name} ({restaurant.votes} {restaurant.votes === 1 ? 'vote' : 'votes'})
+                  </option>
+                ))}
             </select>
           </div>
 

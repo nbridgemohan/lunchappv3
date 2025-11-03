@@ -139,6 +139,75 @@
   min-height: 80px;
 }
 
+.logoUploadSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.uploadLabel {
+  font-weight: 600;
+  color: #ff6b6b;
+  font-size: 0.95rem;
+}
+
+.uploadContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.logoPreview {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 107, 107, 0.3);
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.logoPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fileInput {
+  display: none;
+}
+
+.uploadButton {
+  padding: 0.6rem 1.2rem;
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(255, 107, 107, 0.15));
+  color: #ff6b6b;
+  border: 1.5px dashed #ff6b6b;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  display: inline-block;
+}
+
+.uploadButton:hover {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.4), rgba(255, 107, 107, 0.25));
+  transform: translateY(-2px);
+  border-style: solid;
+}
+
+.uploadHint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #999;
+  text-align: center;
+}
+
 .submitBtn {
   padding: 0.9rem 1.8rem;
   background: linear-gradient(135deg, #ff6b6b, #ffd93d);

@@ -11,6 +11,10 @@ const lunchLocationSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    logoUrl: {
+      type: String,
+      default: null,
+    },
     votes: {
       type: Number,
       default: 0,
