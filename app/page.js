@@ -146,7 +146,7 @@ export default function Home() {
                 </>
               )}
               <Link
-                href="/lunch"
+                href={voters.length > 0 ? `/lunch/${chosenRestaurant._id}/summary` : '/lunch'}
                 className={styles.orderButton}
               >
                 {voters.length > 0 ? '📋 Order Summary & Add Orders' : '🗳️ Go Vote Now!'}
