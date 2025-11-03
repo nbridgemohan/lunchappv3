@@ -166,17 +166,9 @@ export default function Home() {
                 {voters.length > 0 && (
                   <button
                     onClick={handleShareUrl}
+                    className={styles.orderButton}
                     style={{
-                      padding: '1rem 2rem',
-                      background: 'linear-gradient(to right, #ff6b6b, #ffd93d)',
-                      color: '#000',
-                      border: 'none',
-                      borderRadius: '8px',
-                      textDecoration: 'none',
-                      fontSize: '1.1rem',
-                      fontWeight: '600',
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer',
+                      marginTop: 0,
                     }}
                   >
                     {copied ? '✓ Copied!' : '📋 Copy Link'}
