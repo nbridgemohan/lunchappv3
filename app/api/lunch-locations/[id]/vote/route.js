@@ -21,14 +21,28 @@ export async function POST(request, { params }) {
       );
     }
 
-    // Check if user already voted
-    const hasVoted = location.voters.includes(user.userId);
+    // Check if user already voted on THIS location
+    const hasVotedOnThis = location.voters.includes(user.userId);
 
-    if (hasVoted) {
-      // Remove vote
+    if (hasVotedOnThis) {
+      // User can only unvote from the location they voted for
       location.voters = location.voters.filter((voterId) => voterId.toString() !== user.userId.toString());
       location.votes -= 1;
     } else {
+      // Check if user has already voted on ANY other location
+      const userVotedLocations = await LunchLocation.countDocuments({
+        voters: user.userId,
+        _id: { $ne: params.id }, // Exclude current location
+        isActive: true,
+      });
+
+      if (userVotedLocations > 0) {
+        return Response.json(
+          { success: false, error: 'You can only vote for one restaurant. Unvote from your current choice first.' },
+          { status: 400 }
+        );
+      }
+
       // Add vote
       location.voters.push(user.userId);
       location.votes += 1;
@@ -41,7 +55,7 @@ export async function POST(request, { params }) {
     return Response.json(
       {
         success: true,
-        message: hasVoted ? 'Vote removed' : 'Vote added',
+        message: hasVotedOnThis ? 'Vote removed' : 'Vote added',
         data: location,
       },
       { status: 200 }

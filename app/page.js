@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import PieChart from '@/components/PieChart';
 import styles from './page.module.css';
 
 const APP_VERSION = '1.0.0';
@@ -107,31 +106,37 @@ export default function Home() {
 
         {chosenRestaurant ? (
           <>
-            <div className={styles.winnerSection}>
-              <h2>🎉 Today's Winner: {chosenRestaurant.name}</h2>
+            <div className={styles.winnerContainer}>
+              <div className={styles.winnerTrophy}>🏆</div>
+              <h2 className={styles.winnerTitle}>{chosenRestaurant.name}</h2>
               {chosenRestaurant.description && (
-                <p className={styles.description}>{chosenRestaurant.description}</p>
+                <p className={styles.winnerDescription}>{chosenRestaurant.description}</p>
               )}
-              <p className={styles.voteCount}>
-                Votes: {chosenRestaurant.votes}
-              </p>
+              <div className={styles.votersList}>
+                <h3>Team is going to:</h3>
+                <div className={styles.voters}>
+                  {voters.map((voter, index) => (
+                    <div key={voter._id} className={styles.voterBadge}>
+                      <span className={styles.voterNumber}>{index + 1}</span>
+                      <span className={styles.voterName}>{voter.username}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className={styles.votesSummary}>
+                <span className={styles.voteCount}>{voters.length} {voters.length === 1 ? 'person' : 'people'} voted</span>
+              </div>
+              <Link
+                href={`/lunch/${chosenRestaurant._id}/orders`}
+                className={styles.orderButton}
+              >
+                📋 Order Summary & Add Orders
+              </Link>
             </div>
-
-            <div className={styles.chartSection}>
-              <h3>Voting Breakdown</h3>
-              <PieChart restaurant={chosenRestaurant} voters={voters} />
-            </div>
-
-            <Link
-              href={`/lunch/${chosenRestaurant._id}/orders`}
-              className={styles.ordersLink}
-            >
-              View/Add Orders
-            </Link>
           </>
         ) : (
           <div className={styles.empty}>
-            <p>No restaurants have been voted on yet.</p>
+            <p>🤔 No restaurants have been voted on yet.</p>
             <Link href="/lunch" className={styles.lunchBtn}>
               Go vote for a restaurant!
             </Link>

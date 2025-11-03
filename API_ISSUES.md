@@ -69,6 +69,33 @@ if (!authenticated) {
 
 ---
 
+## Issue 5: Single-Vote Restriction
+**Feature:** Users can only vote for one restaurant at a time.
+
+**Implementation:**
+- Check if user has voted on ANY other location before allowing new vote
+- User can only unvote to change their vote
+- Frontend tracks `userVotedLocationId` to disable unavailable vote buttons
+- Backend returns 400 error if user tries to vote on multiple restaurants
+
+**Important Code:**
+```javascript
+// Backend check in vote endpoint
+const userVotedLocations = await LunchLocation.countDocuments({
+  voters: user.userId,
+  _id: { $ne: params.id }, // Exclude current location
+  isActive: true,
+});
+if (userVotedLocations > 0) {
+  return Response.json(
+    { success: false, error: 'You can only vote for one restaurant. Unvote from your current choice first.' },
+    { status: 400 }
+  );
+}
+```
+
+---
+
 ## Checklist for New API Routes
 
 - [ ] Import all models used with `.populate()`
@@ -77,3 +104,5 @@ if (!authenticated) {
 - [ ] Destructure `{ authenticated, user, response }` from `authenticateRequest()`
 - [ ] Check `if (!authenticated) return response;` before using user
 - [ ] Test with actual token to verify field names exist
+- [ ] Enforce business logic on backend (e.g., single-vote restriction)
+- [ ] Track state on frontend to improve UX (disable buttons, show visual feedback)

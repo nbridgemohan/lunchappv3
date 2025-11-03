@@ -16,6 +16,7 @@ export default function LunchPage() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [locationsLoading, setLocationsLoading] = useState(false);
+  const [userVotedLocationId, setUserVotedLocationId] = useState(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -59,6 +60,12 @@ export default function LunchPage() {
       const data = await res.json();
       if (data.success) {
         setLocations(data.data);
+
+        // Find which location the user voted for
+        const userVote = data.data.find((loc) =>
+          loc.voters?.some((voter) => voter._id === user?._id)
+        );
+        setUserVotedLocationId(userVote?._id || null);
       } else {
         showMessage('Failed to fetch locations: ' + (data.error || 'Unknown error'), 'error');
       }
@@ -124,7 +131,13 @@ export default function LunchPage() {
 
       const data = await res.json();
       if (data.success) {
-        setLocations(locations.map((loc) => (loc._id === locationId ? data.data : loc)));
+        const updatedLocation = data.data;
+        setLocations(locations.map((loc) => (loc._id === locationId ? updatedLocation : loc)));
+
+        // Update user's vote tracking
+        const hasVotedOnThis = updatedLocation.voters?.some((voter) => voter._id === user?._id);
+        setUserVotedLocationId(hasVotedOnThis ? locationId : null);
+
         showMessage(data.message, 'success');
       } else {
         showMessage('Error voting: ' + (data.error || 'Unknown error'), 'error');
@@ -222,6 +235,7 @@ export default function LunchPage() {
                 .sort((a, b) => b.votes - a.votes)
                 .map((location) => {
                   const hasVoted = location.voters?.some((voter) => voter._id === user?._id);
+                  const canVote = !userVotedLocationId || userVotedLocationId === location._id;
                   return (
                     <div key={location._id} className={styles.locationCard}>
                       <div className={styles.locationInfo}>
@@ -239,7 +253,9 @@ export default function LunchPage() {
                       <div className={styles.actions}>
                         <button
                           onClick={() => handleVote(location._id)}
-                          className={`${styles.voteBtn} ${hasVoted ? styles.voted : ''}`}
+                          disabled={!canVote && !hasVoted}
+                          className={`${styles.voteBtn} ${hasVoted ? styles.voted : ''} ${!canVote && !hasVoted ? styles.disabled : ''}`}
+                          title={!canVote && !hasVoted ? 'Unvote from your current choice first' : ''}
                         >
                           {hasVoted ? '✓ Voted' : 'Vote'}
                         </button>
