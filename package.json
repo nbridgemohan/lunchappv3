@@ -4,9 +4,9 @@
   "description": "A simple app ready to deploy to Vercel",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+        "dev": "bun --bun next dev",
+        "build": "bun --bun next build",
+        "start": "bun --bun next start",
     "lint": "next lint"
   },
   "dependencies": {
