@@ -15,6 +15,7 @@ export default function SummaryPage({ params }) {
   const [orders, setOrders] = useState([]);
   const [copied, setCopied] = useState(false);
   const [showVoteSummary, setShowVoteSummary] = useState(false);
+  const [copiedSummary, setCopiedSummary] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -76,7 +77,8 @@ export default function SummaryPage({ params }) {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch(`/api/lunch-orders?locationId=${params.id}`);
+      // Fetch ALL orders, not filtered by location
+      const res = await fetch(`/api/lunch-orders`);
 
       if (!res.ok) {
         console.error('Failed to fetch orders');
@@ -99,11 +101,62 @@ export default function SummaryPage({ params }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCopyOrderSummary = () => {
+    // Generate formatted text summary
+    let summaryText = '=== LUNCH ORDER SUMMARY ===\n\n';
+
+    const totalCost = orders.reduce((sum, order) => sum + order.cost, 0);
+    const totalPaid = orders.reduce((sum, order) => {
+      const paid = order.moneyPaid !== null && order.moneyPaid !== undefined ? order.moneyPaid : order.cost;
+      return sum + paid;
+    }, 0);
+    const totalChange = totalPaid - totalCost;
+
+    summaryText += `Total Orders: ${orders.length}\n`;
+    summaryText += `Total Cost: $${totalCost.toFixed(2)}\n`;
+    summaryText += `Total Paid: $${totalPaid.toFixed(2)}\n`;
+    if (totalChange > 0) {
+      summaryText += `Total Change Expected: $${totalChange.toFixed(2)}\n`;
+    } else if (totalChange < 0) {
+      summaryText += `Total Money Owed: $${Math.abs(totalChange).toFixed(2)}\n`;
+    }
+    summaryText += '\n--- INDIVIDUAL ORDERS ---\n\n';
+
+    orders.forEach((order, index) => {
+      const paid = order.moneyPaid !== null && order.moneyPaid !== undefined ? order.moneyPaid : order.cost;
+      const difference = paid - order.cost;
+
+      summaryText += `${index + 1}. ${order.item}\n`;
+      summaryText += `   Restaurant: ${order.locationId?.name || 'N/A'}\n`;
+      summaryText += `   Ordered by: ${order.userId.username}\n`;
+      summaryText += `   Cost: $${order.cost.toFixed(2)}\n`;
+      summaryText += `   Money Paid: $${paid.toFixed(2)}\n`;
+      if (difference > 0) {
+        summaryText += `   Change Expected: $${difference.toFixed(2)}\n`;
+      } else if (difference < 0) {
+        summaryText += `   Money Owed: $${Math.abs(difference).toFixed(2)}\n`;
+      }
+      if (order.notes) {
+        summaryText += `   Notes: ${order.notes}\n`;
+      }
+      summaryText += '\n';
+    });
+
+    navigator.clipboard.writeText(summaryText);
+    setCopiedSummary(true);
+    setTimeout(() => setCopiedSummary(false), 2000);
+  };
+
   if (loading) {
     return <div className={styles.loading}>Loading...</div>;
   }
 
   const totalCost = orders.reduce((sum, order) => sum + order.cost, 0);
+  const totalPaid = orders.reduce((sum, order) => {
+    const paid = order.moneyPaid !== null && order.moneyPaid !== undefined ? order.moneyPaid : order.cost;
+    return sum + paid;
+  }, 0);
+  const totalDifference = totalPaid - totalCost;
 
   return (
     <main className={styles.main}>
@@ -114,6 +167,22 @@ export default function SummaryPage({ params }) {
             <p>{location?.name || 'Loading...'}</p>
           </div>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button
+              onClick={handleCopyOrderSummary}
+              style={{
+                padding: '0.6rem 1.2rem',
+                background: 'rgba(100, 200, 255, 0.2)',
+                color: '#64c8ff',
+                border: '1px solid #64c8ff',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontSize: '0.95rem',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+              }}
+            >
+              {copiedSummary ? '✓ Copied!' : '📋 Copy Summary'}
+            </button>
             <button
               onClick={handleShareUrl}
               style={{
@@ -128,7 +197,7 @@ export default function SummaryPage({ params }) {
                 cursor: 'pointer',
               }}
             >
-              {copied ? '✓ Copied!' : '📋 Share'}
+              {copied ? '✓ Copied!' : '📋 Share Link'}
             </button>
             <Link href={`/lunch/${params.id}/orders`} style={{
               padding: '0.6rem 1.2rem',
@@ -235,23 +304,90 @@ export default function SummaryPage({ params }) {
           {orders.length === 0 ? (
             <p className={styles.empty}>No orders yet.</p>
           ) : (
-            <div className={styles.ordersContainer}>
-              {orders.map((order) => (
-                <div key={order._id} className={styles.orderCard}>
-                  <div className={styles.orderInfo}>
-                    <div className={styles.orderHeader}>
-                      <h3>{order.item}</h3>
-                      <span className={styles.cost}>${order.cost.toFixed(2)}</span>
-                    </div>
-                    {order.notes && (
-                      <p className={styles.notes}>Notes: {order.notes}</p>
-                    )}
-                    <p className={styles.orderedBy}>
-                      by {order.userId.username}
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                background: 'rgba(255, 255, 255, 0.05)',
+                borderRadius: '8px',
+                overflow: 'hidden',
+              }}>
+                <thead>
+                  <tr style={{ background: 'rgba(100, 200, 255, 0.15)' }}>
+                    <th style={{ padding: '1rem', textAlign: 'left', color: '#64c8ff', fontWeight: '600' }}>Item</th>
+                    <th style={{ padding: '1rem', textAlign: 'left', color: '#64c8ff', fontWeight: '600' }}>Restaurant</th>
+                    <th style={{ padding: '1rem', textAlign: 'left', color: '#64c8ff', fontWeight: '600' }}>Ordered By</th>
+                    <th style={{ padding: '1rem', textAlign: 'right', color: '#64c8ff', fontWeight: '600' }}>Cost</th>
+                    <th style={{ padding: '1rem', textAlign: 'right', color: '#64c8ff', fontWeight: '600' }}>Money Paid</th>
+                    <th style={{ padding: '1rem', textAlign: 'right', color: '#64c8ff', fontWeight: '600' }}>Change/Owed</th>
+                    <th style={{ padding: '1rem', textAlign: 'left', color: '#64c8ff', fontWeight: '600' }}>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((order) => {
+                    const paid = order.moneyPaid !== null && order.moneyPaid !== undefined ? order.moneyPaid : order.cost;
+                    const difference = paid - order.cost;
+                    return (
+                      <tr key={order._id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                        <td style={{ padding: '1rem', fontWeight: '500' }}>{order.item}</td>
+                        <td style={{ padding: '1rem' }}>
+                          {order.locationId && (
+                            <span style={{
+                              padding: '0.3rem 0.6rem',
+                              background: 'rgba(255, 107, 107, 0.2)',
+                              color: '#ff6b6b',
+                              borderRadius: '6px',
+                              fontSize: '0.85rem',
+                              fontWeight: '500',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {order.locationId.name}
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '1rem', color: '#999' }}>{order.userId.username}</td>
+                        <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '500' }}>${order.cost.toFixed(2)}</td>
+                        <td style={{ padding: '1rem', textAlign: 'right', color: '#64c8ff', fontWeight: '500' }}>${paid.toFixed(2)}</td>
+                        <td style={{ padding: '1rem', textAlign: 'right', fontSize: '0.9rem', fontWeight: '500' }}>
+                          {difference > 0 ? (
+                            <span style={{ color: '#4ade80' }}>+${difference.toFixed(2)}</span>
+                          ) : difference < 0 ? (
+                            <span style={{ color: '#ff6b6b' }}>-${Math.abs(difference).toFixed(2)}</span>
+                          ) : (
+                            <span style={{ color: '#999' }}>—</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '1rem', color: '#999', fontSize: '0.85rem', maxWidth: '200px' }}>
+                          {order.notes || '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ background: 'rgba(100, 200, 255, 0.1)', borderTop: '2px solid rgba(100, 200, 255, 0.3)' }}>
+                    <td colSpan="3" style={{ padding: '1rem', fontWeight: '600', color: '#64c8ff', fontSize: '1rem' }}>
+                      TOTALS
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#64c8ff', fontSize: '1rem' }}>
+                      ${totalCost.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', color: '#64c8ff', fontSize: '1rem' }}>
+                      ${totalPaid.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '1rem', textAlign: 'right', fontWeight: '600', fontSize: '1rem' }}>
+                      {totalDifference > 0 ? (
+                        <span style={{ color: '#4ade80' }}>+${totalDifference.toFixed(2)}</span>
+                      ) : totalDifference < 0 ? (
+                        <span style={{ color: '#ff6b6b' }}>-${Math.abs(totalDifference).toFixed(2)}</span>
+                      ) : (
+                        <span style={{ color: '#64c8ff' }}>$0.00</span>
+                      )}
+                    </td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           )}
         </div>

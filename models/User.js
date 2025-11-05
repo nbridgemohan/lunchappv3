@@ -5,8 +5,9 @@ const userSchema = new mongoose.Schema(
   {
     username: {
       type: String,
-      required: [true, 'Please provide a username'],
+      required: false, // Not required initially for SSO users
       unique: true,
+      sparse: true, // Allows null values to not be unique
       minlength: [3, 'Username must be at least 3 characters'],
       maxlength: [30, 'Username cannot be more than 30 characters'],
       lowercase: true,
@@ -21,7 +22,7 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, 'Please provide a password'],
+      required: false, // Not required for SSO users
       minlength: [6, 'Password must be at least 6 characters'],
       select: false, // Don't return password by default
     },
@@ -49,7 +50,19 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ['BGL IT'],
       default: 'BGL IT',
-      required: true,
+      required: false, // Not required initially for SSO users
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // Allows null values to not be unique
+    },
+    image: {
+      type: String,
+    },
+    profileComplete: {
+      type: Boolean,
+      default: false, // Track if SSO user has completed their profile
     },
   },
   {

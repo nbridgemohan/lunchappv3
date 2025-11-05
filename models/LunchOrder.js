@@ -22,6 +22,11 @@ const lunchOrderSchema = new mongoose.Schema(
       required: [true, 'Please provide the cost'],
       min: [0, 'Cost cannot be negative'],
     },
+    moneyPaid: {
+      type: Number,
+      default: null, // null means not set, defaults to cost
+      min: [0, 'Money paid cannot be negative'],
+    },
     notes: {
       type: String,
       trim: true,

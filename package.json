@@ -10,16 +10,17 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "^14.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "mongoose": "^8.0.0",
+    "@cloudinary/react": "^1.11.0",
+    "@cloudinary/url-gen": "^1.21.0",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.0",
+    "mongoose": "^8.0.0",
+    "next": "^14.0.0",
+    "next-auth": "^4.24.13",
     "nodemailer": "^6.9.7",
-    "sweetalert2": "^11.10.0",
-    "@cloudinary/url-gen": "^1.21.0",
-    "@cloudinary/react": "^1.11.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sweetalert2": "^11.10.0"
   },
   "devDependencies": {
     "eslint": "^8.0.0",

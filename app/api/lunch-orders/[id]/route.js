@@ -59,7 +59,7 @@ export async function PUT(request, { params }) {
       );
     }
 
-    const { item, cost, notes } = await request.json();
+    const { item, cost, notes, moneyPaid } = await request.json();
 
     if (cost !== undefined && cost < 0) {
       return Response.json(
@@ -68,9 +68,17 @@ export async function PUT(request, { params }) {
       );
     }
 
+    if (moneyPaid !== undefined && moneyPaid !== null && moneyPaid < 0) {
+      return Response.json(
+        { success: false, error: 'Money paid cannot be negative' },
+        { status: 400 }
+      );
+    }
+
     order.item = item || order.item;
     order.cost = cost !== undefined ? cost : order.cost;
     order.notes = notes !== undefined ? notes : order.notes;
+    order.moneyPaid = moneyPaid !== undefined ? moneyPaid : order.moneyPaid;
     await order.save();
     await order.populate('locationId', 'name');
     await order.populate('userId', 'username email');

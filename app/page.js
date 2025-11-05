@@ -1,15 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/AuthContext';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import styles from './page.module.css';
 
 const APP_VERSION = '1.0.0';
 
 export default function Home() {
-  const { user, token, loading, logout, sessionExpired } = useAuth();
+  const { user, token, loading, logout, sessionExpired, login } = useAuth();
+  const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
 
   const [chosenRestaurant, setChosenRestaurant] = useState(null);
@@ -17,13 +20,54 @@ export default function Home() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [pageLoading, setPageLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [copiedOrders, setCopiedOrders] = useState(false);
+  const [showShareDropdown, setShowShareDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Handle SSO login - if NextAuth session exists but custom auth doesn't
+  useEffect(() => {
+    const handleSSOLogin = async () => {
+      if (sessionStatus === 'loading' || loading) return;
+
+      // If we have a NextAuth session but no custom auth token
+      if (session && !user && !token) {
+        try {
+          const response = await fetch('/api/auth/sso-login', {
+            method: 'POST',
+          });
+
+          const data = await response.json();
+
+          if (data.needsProfileCompletion) {
+            router.push('/complete-profile');
+            return;
+          }
+
+          if (data.success && data.data) {
+            // Login with custom auth system
+            login(data.data, data.data.token);
+          } else if (data.error) {
+            // If there's an error, redirect to login
+            console.error('SSO login failed:', data.error);
+            router.push('/login');
+          }
+        } catch (error) {
+          console.error('SSO login error:', error);
+          // On error, redirect to login
+          router.push('/login');
+        }
+      }
+    };
+
+    handleSSOLogin();
+  }, [session, sessionStatus, user, token, loading, login, router]);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && sessionStatus !== 'loading' && !session) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, session, sessionStatus]);
 
   useEffect(() => {
     if (sessionExpired) {
@@ -35,8 +79,26 @@ export default function Home() {
   useEffect(() => {
     if (!loading && token) {
       fetchTodaysWinner();
+      fetchOrders();
     }
   }, [token, loading]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowShareDropdown(false);
+      }
+    };
+
+    if (showShareDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showShareDropdown]);
 
   const showMessage = (msg, type) => {
     setMessage(msg);
@@ -45,13 +107,6 @@ export default function Home() {
       setMessage('');
       setMessageType('');
     }, 3000);
-  };
-
-  const handleShareUrl = () => {
-    const url = `${window.location.origin}/lunch/${chosenRestaurant._id}/summary`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const fetchTodaysWinner = async () => {
@@ -76,8 +131,98 @@ export default function Home() {
     }
   };
 
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch('/api/lunch-orders');
+
+      if (!res.ok) {
+        console.error('Failed to fetch orders');
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        setOrders(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    }
+  };
+
+  const generateOrderText = () => {
+    if (!chosenRestaurant || orders.length === 0) {
+      return 'No orders yet for today!';
+    }
+
+    // Generate formatted text summary for all orders
+    let orderText = '🍽️ LUNCH ORDERS 🍽️\n';
+    orderText += `${chosenRestaurant.name}\n`;
+    orderText += '━━━━━━━━━━━━━━━━━━━━━━━━\n\n';
+
+    const totalCost = orders.reduce((sum, order) => sum + order.cost, 0);
+    const totalPaid = orders.reduce((sum, order) => {
+      const paid = order.moneyPaid !== null && order.moneyPaid !== undefined ? order.moneyPaid : order.cost;
+      return sum + paid;
+    }, 0);
+    const totalDifference = totalPaid - totalCost;
+
+    orders.forEach((order, index) => {
+      const paid = order.moneyPaid !== null && order.moneyPaid !== undefined ? order.moneyPaid : order.cost;
+      const difference = paid - order.cost;
+
+      orderText += `${index + 1}. ${order.userId.username}\n`;
+      orderText += `   📍 ${order.locationId?.name || 'N/A'}\n`;
+      orderText += `   🍴 ${order.item}\n`;
+      orderText += `   💰 Cost: $${order.cost.toFixed(2)}\n`;
+      orderText += `   💵 Paid: $${paid.toFixed(2)}\n`;
+
+      if (difference > 0) {
+        orderText += `   ✅ Change: $${difference.toFixed(2)}\n`;
+      } else if (difference < 0) {
+        orderText += `   ⚠️ Owes: $${Math.abs(difference).toFixed(2)}\n`;
+      } else {
+        orderText += `   ✓ Exact amount\n`;
+      }
+
+      if (order.notes) {
+        orderText += `   📝 ${order.notes}\n`;
+      }
+      orderText += '\n';
+    });
+
+    orderText += '━━━━━━━━━━━━━━━━━━━━━━━━\n';
+    orderText += `📊 TOTALS:\n`;
+    orderText += `   Orders: ${orders.length}\n`;
+    orderText += `   Total Cost: $${totalCost.toFixed(2)}\n`;
+    orderText += `   Total Paid: $${totalPaid.toFixed(2)}\n`;
+
+    if (totalDifference > 0) {
+      orderText += `   Change Expected: $${totalDifference.toFixed(2)}\n`;
+    } else if (totalDifference < 0) {
+      orderText += `   Money Owed: $${Math.abs(totalDifference).toFixed(2)}\n`;
+    }
+
+    return orderText;
+  };
+
+  const handleCopyToClipboard = () => {
+    const orderText = generateOrderText();
+    navigator.clipboard.writeText(orderText);
+    setCopiedOrders(true);
+    setShowShareDropdown(false);
+    setTimeout(() => setCopiedOrders(false), 2000);
+  };
+
+  const handleSendWhatsApp = () => {
+    const orderText = generateOrderText();
+    const encodedText = encodeURIComponent(orderText);
+    const whatsappUrl = `https://wa.me/?text=${encodedText}`;
+    window.open(whatsappUrl, '_blank');
+    setShowShareDropdown(false);
+  };
+
   if (loading || pageLoading) {
-    return <div className={styles.loading}>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   return (
@@ -153,7 +298,7 @@ export default function Home() {
               {voters.length > 0 && (
                 <>
                   <div className={styles.votersList}>
-                    <h3>Team is going to:</h3>
+                    <h3>VOTERS:</h3>
                     <div className={styles.voters}>
                       {voters.map((voter, index) => (
                         <div key={voter._id} className={styles.voterBadge}>
@@ -170,21 +315,83 @@ export default function Home() {
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
                 <Link
-                  href={voters.length > 0 ? `/lunch/${chosenRestaurant._id}/summary` : '/lunch'}
+                  href={voters.length > 0 ? `/lunch/${chosenRestaurant._id}/orders` : '/lunch'}
                   className={styles.orderButton}
                 >
-                  {voters.length > 0 ? '📋 Order Summary & Add Orders' : '🗳️ Go Vote Now!'}
+                  {voters.length > 0 ? '📋 View Orders & Place Order' : '🗳️ Go Vote Now!'}
                 </Link>
                 {voters.length > 0 && (
-                  <button
-                    onClick={handleShareUrl}
-                    className={styles.copyButton}
-                    style={{
-                      marginTop: 0,
-                    }}
-                  >
-                    {copied ? '✓ Copied!' : '📋 Copy Link'}
-                  </button>
+                  <div ref={dropdownRef} style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowShareDropdown(!showShareDropdown)}
+                      className={styles.copyButton}
+                      style={{
+                        marginTop: 0,
+                      }}
+                    >
+                      {copiedOrders ? '✓ Copied!' : '📤 Share Orders'}
+                    </button>
+                    {showShareDropdown && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 0.5rem)',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'rgba(20, 20, 30, 0.98)',
+                        border: '1px solid rgba(100, 200, 255, 0.3)',
+                        borderRadius: '8px',
+                        padding: '0.5rem',
+                        minWidth: '200px',
+                        zIndex: 1000,
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+                      }}>
+                        <button
+                          onClick={handleCopyToClipboard}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            background: 'transparent',
+                            color: '#64c8ff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            textAlign: 'left',
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                          }}
+                          onMouseEnter={(e) => e.target.style.background = 'rgba(100, 200, 255, 0.1)'}
+                          onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                        >
+                          📋 Copy to Clipboard
+                        </button>
+                        <button
+                          onClick={handleSendWhatsApp}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem 1rem',
+                            background: 'transparent',
+                            color: '#64c8ff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            textAlign: 'left',
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                            transition: 'background 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                          }}
+                          onMouseEnter={(e) => e.target.style.background = 'rgba(100, 200, 255, 0.1)'}
+                          onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                        >
+                          💬 Send via WhatsApp
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

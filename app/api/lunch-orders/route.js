@@ -54,7 +54,7 @@ export async function POST(request) {
     }
 
     await dbConnect();
-    const { locationId, item, cost, notes } = await request.json();
+    const { locationId, item, cost, notes, moneyPaid } = await request.json();
 
     if (!locationId || !item || cost === undefined) {
       return Response.json(
@@ -70,6 +70,13 @@ export async function POST(request) {
       );
     }
 
+    if (moneyPaid !== undefined && moneyPaid !== null && moneyPaid < 0) {
+      return Response.json(
+        { success: false, error: 'Money paid cannot be negative' },
+        { status: 400 }
+      );
+    }
+
     // Get today's date in Trinidad timezone
     const { startOfDay } = getTrinidadDateRange();
 
@@ -79,6 +86,7 @@ export async function POST(request) {
       item,
       cost,
       notes,
+      moneyPaid: moneyPaid !== undefined ? moneyPaid : null,
       orderDate: startOfDay,
     });
 

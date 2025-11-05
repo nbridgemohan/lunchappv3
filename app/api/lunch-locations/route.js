@@ -7,15 +7,45 @@ import { getTrinidadDateRange } from '@/lib/dateUtils';
 export async function GET(request) {
   try {
     await dbConnect();
+
+    // Get today's date range in Trinidad timezone
+    const { startOfDay, endOfDay } = getTrinidadDateRange();
+
     const locations = await LunchLocation.find({ isActive: true })
       .populate('createdBy', 'username email')
-      .populate('voters', 'username email')
       .sort({ votes: -1, createdAt: -1 });
+
+    // Filter votes to only show today's votes
+    const locationsWithTodayVotes = await Promise.all(
+      locations.map(async (location) => {
+        const locationObj = location.toObject();
+
+        // Filter votesHistory for today only
+        const todayVotes = (locationObj.votesHistory || []).filter((vote) => {
+          const voteDate = new Date(vote.voteDate);
+          return voteDate >= startOfDay && voteDate <= endOfDay;
+        });
+
+        // Update voters and votes count to reflect only today's votes
+        const voterIds = todayVotes.map((vote) => vote.userId);
+
+        // Fetch voter details
+        const voters = await User.find({ _id: { $in: voterIds } }).select('username email');
+
+        locationObj.voters = voters;
+        locationObj.votes = todayVotes.length;
+
+        return locationObj;
+      })
+    );
+
+    // Re-sort by today's vote count
+    locationsWithTodayVotes.sort((a, b) => b.votes - a.votes || new Date(b.createdAt) - new Date(a.createdAt));
 
     return Response.json(
       {
         success: true,
-        data: locations,
+        data: locationsWithTodayVotes,
       },
       { status: 200 }
     );

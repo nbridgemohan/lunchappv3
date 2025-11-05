@@ -2,6 +2,7 @@ import dbConnect from '@/lib/mongodb';
 import LunchLocation from '@/models/LunchLocation';
 import User from '@/models/User';
 import { authenticateRequest } from '@/lib/auth';
+import { getTrinidadDateRange } from '@/lib/dateUtils';
 
 export async function POST(request, { params }) {
   try {
@@ -12,6 +13,10 @@ export async function POST(request, { params }) {
     }
 
     await dbConnect();
+
+    // Get today's date range in Trinidad timezone
+    const { startOfDay, endOfDay } = getTrinidadDateRange();
+
     const location = await LunchLocation.findById(params.id);
 
     if (!location) {
@@ -21,32 +26,59 @@ export async function POST(request, { params }) {
       );
     }
 
-    // Check if user already voted on THIS location
-    const hasVotedOnThis = location.voters.includes(user.userId);
+    // Initialize votesHistory if it doesn't exist
+    if (!location.votesHistory) {
+      location.votesHistory = [];
+    }
+
+    // Check if user already voted on THIS location TODAY
+    const todayVoteIndex = location.votesHistory.findIndex(
+      (vote) =>
+        vote.userId.toString() === user.userId.toString() &&
+        new Date(vote.voteDate) >= startOfDay &&
+        new Date(vote.voteDate) <= endOfDay
+    );
+
+    const hasVotedOnThis = todayVoteIndex !== -1;
 
     if (hasVotedOnThis) {
-      // User can only unvote from the location they voted for
-      location.voters = location.voters.filter((voterId) => voterId.toString() !== user.userId.toString());
-      location.votes -= 1;
+      // Remove today's vote from this location
+      location.votesHistory.splice(todayVoteIndex, 1);
     } else {
-      // Check if user has already voted on ANY other location
-      const userVotedLocations = await LunchLocation.countDocuments({
-        voters: user.userId,
+      // Check if user has already voted on ANY other location TODAY
+      const userVotedToday = await LunchLocation.findOne({
+        votesHistory: {
+          $elemMatch: {
+            userId: user.userId,
+            voteDate: { $gte: startOfDay, $lte: endOfDay },
+          },
+        },
         _id: { $ne: params.id }, // Exclude current location
         isActive: true,
       });
 
-      if (userVotedLocations > 0) {
+      if (userVotedToday) {
         return Response.json(
-          { success: false, error: 'You can only vote for one restaurant. Unvote from your current choice first.' },
+          { success: false, error: 'You can only vote for one restaurant per day. Unvote from your current choice first.' },
           { status: 400 }
         );
       }
 
-      // Add vote
-      location.voters.push(user.userId);
-      location.votes += 1;
+      // Add vote for today
+      location.votesHistory.push({
+        userId: user.userId,
+        voteDate: startOfDay,
+      });
     }
+
+    // Update the legacy voters array and votes count for today
+    const todayVotes = location.votesHistory.filter((vote) => {
+      const voteDate = new Date(vote.voteDate);
+      return voteDate >= startOfDay && voteDate <= endOfDay;
+    });
+
+    location.voters = todayVotes.map((vote) => vote.userId);
+    location.votes = todayVotes.length;
 
     await location.save();
     await location.populate('createdBy', 'username email');

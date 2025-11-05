@@ -301,9 +301,11 @@ export default function LunchPage() {
                         {location.description && (
                           <p className={styles.description}>{location.description}</p>
                         )}
-                        <p className={styles.createdBy}>
-                          Added by {location.createdBy.username}
-                        </p>
+                        {location.createdBy && (
+                          <p className={styles.createdBy}>
+                            Added by {location.createdBy.username}
+                          </p>
+                        )}
                       </div>
                       <div className={styles.actions}>
                         <button

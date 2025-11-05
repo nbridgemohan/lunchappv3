@@ -29,6 +29,19 @@ const lunchLocationSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    votesHistory: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+          required: true,
+        },
+        voteDate: {
+          type: Date,
+          required: true,
+        },
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,
