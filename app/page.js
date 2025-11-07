@@ -305,6 +305,7 @@ export default function Home() {
                 {showVoteSummary && (
                 <div className={styles.voteSummaryList}>
                   {restaurants
+                    .filter((restaurant) => restaurant.votes > 0)
                     .sort((a, b) => b.votes - a.votes)
                     .map((restaurant) => (
                       <div key={restaurant._id} style={{ marginBottom: '1.5rem', padding: '1rem', borderRadius: '8px', background: 'rgba(255, 107, 107, 0.08)' }}>
