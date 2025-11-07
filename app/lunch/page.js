@@ -277,18 +277,17 @@ export default function LunchPage() {
         <div className={styles.votingSection}>
           <h2>Vote for your lunch spot</h2>
           {locations.length > 0 && (
-            <div style={{ marginBottom: '1.5rem' }}>
-              <input
-                type="text"
-                placeholder="🔍 Search restaurants..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                className={styles.input}
-                style={{
-                  marginBottom: 0,
-                }}
-              />
-            </div>
+            <input
+              type="text"
+              placeholder="🔍 Search restaurants..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              className={styles.input}
+              style={{
+                marginBottom: '1.5rem',
+                width: '100%',
+              }}
+            />
           )}
           {locations.length === 0 ? (
             <p className={styles.empty}>No restaurants yet. Add one above!</p>
