@@ -85,6 +85,23 @@ export default function LunchPage() {
 
   const handleAddLocation = async (e) => {
     e.preventDefault();
+
+    // Normalize the new location name for comparison
+    const normalizedNewName = newLocation.toLowerCase().replace(/\s+/g, '');
+
+    // Check if a restaurant with the same normalized name already exists
+    const duplicateRestaurant = locations.find(
+      (location) => location.name.toLowerCase().replace(/\s+/g, '') === normalizedNewName
+    );
+
+    if (duplicateRestaurant) {
+      showError(
+        `A restaurant named "${duplicateRestaurant.name}" already exists. Please choose a different name.`,
+        'Duplicate Restaurant'
+      );
+      return;
+    }
+
     setLocationsLoading(true);
 
     try {
