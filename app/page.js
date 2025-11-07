@@ -23,6 +23,8 @@ export default function Home() {
   const [orders, setOrders] = useState([]);
   const [copiedOrders, setCopiedOrders] = useState(false);
   const [showShareDropdown, setShowShareDropdown] = useState(false);
+  const [showVoteSummary, setShowVoteSummary] = useState(false);
+  const [restaurants, setRestaurants] = useState([]);
   const dropdownRef = useRef(null);
 
   // Handle SSO login - if NextAuth session exists but custom auth doesn't
@@ -123,6 +125,7 @@ export default function Home() {
         const winner = data.data[0];
         setChosenRestaurant(winner);
         setVoters(winner.voters || []);
+        setRestaurants(data.data);
       }
       setPageLoading(false);
     } catch (error) {
@@ -271,6 +274,75 @@ export default function Home() {
                 📋 Place Order
               </Link>
             </div>
+
+            {restaurants.length > 0 && (
+              <div className={styles.voteSummary}>
+                <button
+                  type="button"
+                  onClick={() => setShowVoteSummary(!showVoteSummary)}
+                  style={{
+                    width: '100%',
+                    padding: '1rem 1.5rem',
+                    background: 'linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(255, 217, 61, 0.1))',
+                    border: '2px solid rgba(255, 107, 107, 0.3)',
+                    borderRadius: '12px',
+                    color: '#ff6b6b',
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    transition: 'all 0.3s ease',
+                    marginBottom: '1rem',
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', width: '24px' }}>
+                    {showVoteSummary ? '▼' : '▶'}
+                  </span>
+                  <span>📊 Vote Summary</span>
+                </button>
+                {showVoteSummary && (
+                <div className={styles.voteSummaryList}>
+                  {restaurants
+                    .sort((a, b) => b.votes - a.votes)
+                    .map((restaurant) => (
+                      <div key={restaurant._id} style={{ marginBottom: '1.5rem', padding: '1rem', borderRadius: '8px', background: 'rgba(255, 107, 107, 0.08)' }}>
+                        <div className={styles.voteSummaryItem}>
+                          <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>{restaurant.emoji || '🍽️'}</span>
+                          <span className={styles.restaurantNameSummary}>{restaurant.name}</span>
+                          <span className={styles.voteCountSummary}>{restaurant.votes} {restaurant.votes === 1 ? 'vote' : 'votes'}</span>
+                        </div>
+                        {restaurant.voters && restaurant.voters.length > 0 && (
+                          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 107, 107, 0.2)' }}>
+                            <div style={{ fontSize: '0.85rem', color: '#999', marginBottom: '0.5rem' }}>Voted by:</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                              {restaurant.voters.map((voter) => (
+                                <span
+                                  key={voter._id}
+                                  style={{
+                                    display: 'inline-block',
+                                    padding: '0.4rem 0.8rem',
+                                    background: 'rgba(100, 200, 255, 0.15)',
+                                    color: '#64c8ff',
+                                    borderRadius: '6px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: '500',
+                                  }}
+                                >
+                                  {voter.username}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+                )}
+              </div>
+            )}
+
             <div className={styles.winnerContainer}>
               {chosenRestaurant.logoUrl && voters.length > 0 && (
                 <div className={styles.winnerLogo}>

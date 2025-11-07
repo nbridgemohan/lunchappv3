@@ -22,6 +22,7 @@ export default function LunchPage() {
   const [locationsLoading, setLocationsLoading] = useState(false);
   const [userVotedLocationId, setUserVotedLocationId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [filterText, setFilterText] = useState('');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -275,11 +276,26 @@ export default function LunchPage() {
 
         <div className={styles.votingSection}>
           <h2>Vote for your lunch spot</h2>
+          {locations.length > 0 && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <input
+                type="text"
+                placeholder="🔍 Search restaurants..."
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+                className={styles.input}
+                style={{
+                  marginBottom: 0,
+                }}
+              />
+            </div>
+          )}
           {locations.length === 0 ? (
             <p className={styles.empty}>No restaurants yet. Add one above!</p>
           ) : (
             <div className={styles.locationsList}>
               {locations
+                .filter((location) => location.name.toLowerCase().includes(filterText.toLowerCase()))
                 .sort((a, b) => b.votes - a.votes)
                 .map((location) => {
                   const hasVoted = location.voters?.some((voter) => voter._id === user?.userId);
