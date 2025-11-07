@@ -311,7 +311,7 @@ export default function Home() {
                         <div className={styles.voteSummaryItem}>
                           <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>{restaurant.emoji || '🍽️'}</span>
                           <span className={styles.restaurantNameSummary}>{restaurant.name}</span>
-                          <span className={styles.voteCountSummary}>{restaurant.votes} {restaurant.votes === 1 ? 'vote' : 'votes'}</span>
+                          <span className={styles.voteCountSummary}> - {restaurant.votes} {restaurant.votes === 1 ? 'vote' : 'votes'}</span>
                         </div>
                         {restaurant.voters && restaurant.voters.length > 0 && (
                           <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 107, 107, 0.2)' }}>
